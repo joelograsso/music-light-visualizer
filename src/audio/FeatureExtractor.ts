@@ -1,7 +1,10 @@
-import { BAND_EDGES, SMOOTHING, ENERGY } from '../config';
+import { BAND_EDGES, SMOOTHING, ENERGY, TEMPO } from '../config';
 import type { FrequencyBands, AudioFeatures } from '../types';
-import { computeMotionSpeed, estimateTempo } from './tempo';
+import { computeMotionSpeed } from './tempo';
 import { DropDetector } from './DropDetector';
+import { OnsetDetector } from './OnsetDetector';
+import { OnsetEnvelope } from './OnsetEnvelope';
+import { estimateTempo } from './TempoEstimator';
 
 export function binForFreq(freq: number, sampleRate: number, fftSize: number): number {
   const binWidth = sampleRate / fftSize;
@@ -28,31 +31,28 @@ export function computeBands(data: Uint8Array, sr: number, fft: number): Frequen
 }
 
 export class FeatureExtractor {
-  private prev: Float32Array | null = null;
   private loudness = 0;
   private energy = 0;
-  private presence = 0;             // 0..1 envelope: is sound present / how warmed-up are we
-  private bands: FrequencyBands = { bass: 0, lowMid: 0, mid: 0, high: 0 }; // smoothed for visuals
+  private presence = 0;
+  private bands: FrequencyBands = { bass: 0, lowMid: 0, mid: 0, high: 0 };
   /** Loudness gain (sensitivity). Set from the UI to calibrate to the audio level. */
   gain = ENERGY.defaultSensitivity;
-  private fluxMean = 0;     // running mean of spectral flux
-  private fluxVar = 1e-6;   // running variance
-  private onsetTimes: number[] = [];
-  private clock = 0;
+  private bpm = 0;
+  private beatEnv = 0;
+  private onset: OnsetDetector;
+  private onsetEnv = new OnsetEnvelope(TEMPO.rateHz, TEMPO.seconds);
   private dropDetector = new DropDetector();
 
-  constructor(private sampleRate: number, private fftSize: number) {}
+  constructor(private sampleRate: number, private fftSize: number) {
+    this.onset = new OnsetDetector(sampleRate, fftSize);
+  }
 
   /**
-   * @param data frequency-domain magnitudes (for bands + onset detection)
-   * @param rms  time-domain RMS amplitude 0..1 — a TRUE absolute loudness measure.
-   *   (Frequency-byte data is auto-scaled to a dB window and registers faint sound as
-   *   loud, so loudness must come from the waveform amplitude instead.)
+   * @param data frequency-domain magnitudes (bands + onset detection)
+   * @param rms  time-domain RMS amplitude 0..1 (absolute loudness)
    */
   process(data: Uint8Array, rms: number, dt: number): AudioFeatures {
-    this.clock += dt;
-    // Smooth the visualized bands so spike/breathing amplitudes ease instead of
-    // snapping frame-to-frame on noisy input.
+    // Smoothed visualized bands (so spike/breathing amplitudes ease, not snap).
     const raw = computeBands(data, this.sampleRate, this.fftSize);
     this.bands.bass += (raw.bass - this.bands.bass) * ENERGY.bandSmooth;
     this.bands.lowMid += (raw.lowMid - this.bands.lowMid) * ENERGY.bandSmooth;
@@ -60,54 +60,37 @@ export class FeatureExtractor {
     this.bands.high += (raw.high - this.bands.high) * ENERGY.bandSmooth;
     const bands: FrequencyBands = { ...this.bands };
 
-    // Loudness = smoothed waveform RMS (genuine amplitude; silence -> ~0).
+    // Loudness = smoothed waveform RMS (true absolute amplitude).
     this.loudness += (rms - this.loudness) * SMOOTHING.loudness;
 
-    // ABSOLUTE intensity: how loud the music actually is, on a fixed scale (calibrated
-    // by `gain`). A steady moderate beat sits low; only genuinely loud sections approach
-    // the top. The gamma keeps moderate input mild so there's headroom to build into.
+    // Absolute intensity (sensitivity-scaled, gamma-shaped).
     const scaled = this.loudness * this.gain;
     const intensity = Math.pow(Math.min(1, scaled / ENERGY.fullScale), ENERGY.dynamicsGamma);
 
-    // Presence envelope: gentle intro ramp + silence gate (blank canvas when quiet).
+    // Presence: gentle intro ramp + silence gate (blank canvas when quiet).
     const present = scaled > ENERGY.silenceThreshold ? 1 : 0;
-    const rate = present ? ENERGY.presenceRise : ENERGY.presenceFall;
-    this.presence += (present - this.presence) * rate;
+    const pRate = present ? ENERGY.presenceRise : ENERGY.presenceFall;
+    this.presence += (present - this.presence) * pRate;
 
-    // Energy follows absolute intensity (gated by presence), smoothed so it eases.
+    // Energy: attack/release envelope — prompt on swells, smooth on the decay.
     const target = this.presence * intensity;
-    this.energy += (target - this.energy) * ENERGY.energySmooth;
+    const eRate = target > this.energy ? ENERGY.energyAttack : ENERGY.energyRelease;
+    this.energy += (target - this.energy) * eRate;
 
-    // spectral flux onset detection
-    let flux = 0;
-    if (this.prev) {
-      for (let i = 0; i < data.length; i++) {
-        const d = data[i] / 255 - this.prev[i];
-        if (d > 0) flux += d;
-      }
-      flux /= data.length;
-    }
-    if (!this.prev) this.prev = new Float32Array(data.length);
-    for (let i = 0; i < data.length; i++) this.prev[i] = data[i] / 255;
+    // Clean kick-focused onset detection; feed the fixed-rate envelope for tempo.
+    const onsetRes = this.onset.process(data, dt);
+    this.onsetEnv.push(onsetRes.odf, dt);
 
-    // adaptive threshold via running mean/std
-    const alpha = 0.05;
-    const diff = flux - this.fluxMean;
-    this.fluxMean += alpha * diff;
-    this.fluxVar += alpha * (diff * diff - this.fluxVar);
-    const std = Math.sqrt(this.fluxVar) + 1e-6;
-    const z = (flux - this.fluxMean) / std;
-    let beat = 0;
-    if (z > 1.5) {
-      beat = Math.min(1, (z - 1.5) / 3);
-      const last = this.onsetTimes[this.onsetTimes.length - 1];
-      if (last === undefined || this.clock - last > 0.12) {
-        this.onsetTimes.push(this.clock);
-        if (this.onsetTimes.length > 16) this.onsetTimes.shift();
-      }
-    }
+    // Beat pulse: jump on a detected onset, decay quickly -> a clean 0..1 beat signal.
+    if (onsetRes.onset) this.beatEnv = Math.max(this.beatEnv, Math.max(0.7, onsetRes.strength));
+    this.beatEnv = Math.max(0, this.beatEnv - dt * 4.5);
+    const beat = this.beatEnv;
 
-    const tempoBpm = estimateTempo(this.onsetTimes);
+    // Tempo via autocorrelation of the onset envelope (stable), smoothed.
+    const tempo = estimateTempo(this.onsetEnv.values, TEMPO.rateHz, TEMPO.minBpm, TEMPO.maxBpm);
+    if (tempo) this.bpm = this.bpm > 0 ? this.bpm + (tempo.bpm - this.bpm) * TEMPO.smooth : tempo.bpm;
+    const tempoBpm = this.bpm > 0 ? this.bpm : null;
+
     const motionSpeed = computeMotionSpeed(this.energy, tempoBpm);
     const drop = this.dropDetector.update(this.energy, dt);
 
@@ -117,4 +100,3 @@ export class FeatureExtractor {
     };
   }
 }
-

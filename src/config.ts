@@ -3,6 +3,31 @@ export const FFT_SIZE = 2048;
 /** Frequency band edges in Hz: [bass, lowMid, mid, high] upper bounds. */
 export const BAND_EDGES = { bassMax: 150, lowMidMax: 500, midMax: 2000, highMax: 8000 };
 
+/**
+ * Onset detection: half-wave-rectified spectral flux weighted toward the low end
+ * (kick/snare) — the part you feel as the beat — with an adaptive moving threshold
+ * and a refractory gap so it picks clean beats instead of broadband noise.
+ */
+export const ONSET = {
+  lowHz: 500,          // only consider flux up to here (kick + snare body)
+  threshMargin: 1.6,   // onset when flux exceeds movingAvg * this ...
+  threshFloor: 0.004,  // ... plus this floor (ignore tiny flux)
+  refractorySec: 0.11, // min seconds between onsets
+  histFrames: 43,      // moving-average window (~0.7s at 60fps)
+};
+
+/**
+ * Tempo + beat tracking. The onset strength is resampled into a fixed-rate envelope;
+ * tempo comes from autocorrelating that envelope (robust vs. inter-onset medians).
+ */
+export const TEMPO = {
+  rateHz: 100,         // fixed sample rate of the onset envelope
+  seconds: 6,          // history length for autocorrelation
+  minBpm: 70,
+  maxBpm: 180,
+  smooth: 0.04,        // smoothing of the BPM estimate
+};
+
 /** Smoothing factors per frame (0..1, higher = snappier). */
 export const SMOOTHING = { loudness: 0.4, energy: 0.04 };
 
@@ -21,10 +46,11 @@ export const ENERGY = {
   silenceThreshold: 0.02,  // scaled RMS loudness below which we treat input as silence
   presenceRise: 0.01,      // per-frame ramp toward 1 while sound is present (gentle intro)
   presenceFall: 0.012,     // per-frame decay toward 0 during silence (core recedes)
-  energySmooth: 0.04,      // tracks the energy target smoothly (no jitter)
+  energyAttack: 0.09,      // energy rises at this rate (responds promptly to swells)
+  energyRelease: 0.03,     // and falls at this slower rate (smooth musical decay)
   fullScale: 0.3,          // scaled RMS loudness that maps to full energy
   dynamicsGamma: 1.4,      // >1 keeps moderate loudness mild so only loud sections peak
-  bandSmooth: 0.16,        // per-frame smoothing of visualized frequency bands (anti-jitter)
+  bandSmooth: 0.12,        // per-frame smoothing of visualized frequency bands (anti-jitter)
   defaultSensitivity: 1.0, // loudness gain; user-tunable to calibrate to their audio level
   minSensitivity: 0.4,
   maxSensitivity: 2.5,
