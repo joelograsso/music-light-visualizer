@@ -16,6 +16,7 @@ export interface AudioFeatures {
   drop: number;            // 0..1 explosion envelope; spikes on a detected drop, then decays
   beatPhase: number;       // 0..1 position within the beat (0 = on the beat), phase-locked
   beatConfidence: number;  // 0..1 how locked-in the beat tracker is
+  anticipation: number;    // 0..1 build-up glow before a known drop (analyzed files only; 0 live)
 }
 
 /** Per-layer gate opacities produced by StageController. */

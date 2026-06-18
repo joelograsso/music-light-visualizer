@@ -140,7 +140,7 @@ export class FeatureExtractor {
     return {
       loudness: this.loudness, energy: this.energy, bands, beat,
       motionSpeed, tempoBpm, presence: this.presence, drop,
-      beatPhase, beatConfidence,
+      beatPhase, beatConfidence, anticipation: 0,
     };
   }
 }
