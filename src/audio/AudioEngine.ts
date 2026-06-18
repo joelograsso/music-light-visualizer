@@ -12,6 +12,7 @@ export class AudioEngine {
   private ctx?: AudioContext;
   private analyser?: AnalyserNode;
   private data?: Uint8Array<ArrayBuffer>;
+  private timeData?: Uint8Array<ArrayBuffer>;
   private extractor?: FeatureExtractor;
   private source?: AudioSource;
   private features: AudioFeatures = SILENT;
@@ -41,6 +42,7 @@ export class AudioEngine {
     this.analyser.smoothingTimeConstant = 0.6;
     node.connect(this.analyser);
     this.data = new Uint8Array(this.analyser.frequencyBinCount);
+    this.timeData = new Uint8Array(this.analyser.fftSize);
     this.extractor = new FeatureExtractor(this.ctx.sampleRate, FFT_SIZE);
     this.extractor.gain = this.sensitivity;
     this.source = source;
@@ -49,12 +51,20 @@ export class AudioEngine {
 
   /** Pull the latest features; call once per render frame. */
   sample(): AudioFeatures {
-    if (!this.analyser || !this.data || !this.extractor) return this.features;
+    if (!this.analyser || !this.data || !this.timeData || !this.extractor) return this.features;
     const now = performance.now();
     const dt = Math.min(0.05, (now - this.lastTime) / 1000);
     this.lastTime = now;
     this.analyser.getByteFrequencyData(this.data);
-    this.features = this.extractor.process(this.data, dt);
+    this.analyser.getByteTimeDomainData(this.timeData);
+    // RMS of the waveform (bytes centered at 128) = absolute loudness, 0..~1.
+    let sumSq = 0;
+    for (let i = 0; i < this.timeData.length; i++) {
+      const v = (this.timeData[i] - 128) / 128;
+      sumSq += v * v;
+    }
+    const rms = Math.sqrt(sumSq / this.timeData.length);
+    this.features = this.extractor.process(this.data, rms, dt);
     return this.features;
   }
 
@@ -62,6 +72,6 @@ export class AudioEngine {
     this.source?.stop();
     await this.ctx?.close();
     this.ctx = undefined; this.analyser = undefined; this.features = SILENT;
-    this.source = undefined; this.extractor = undefined; this.data = undefined;
+    this.source = undefined; this.extractor = undefined; this.data = undefined; this.timeData = undefined;
   }
 }

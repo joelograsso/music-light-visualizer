@@ -18,11 +18,11 @@ export const SMOOTHING = { loudness: 0.4, energy: 0.04 };
  *  - `bandSmooth`: smooths the visualized bands so spikes ease instead of snapping.
  */
 export const ENERGY = {
-  silenceThreshold: 0.03,  // scaled loudness below which we treat input as silence
+  silenceThreshold: 0.02,  // scaled RMS loudness below which we treat input as silence
   presenceRise: 0.01,      // per-frame ramp toward 1 while sound is present (gentle intro)
   presenceFall: 0.012,     // per-frame decay toward 0 during silence (core recedes)
   energySmooth: 0.04,      // tracks the energy target smoothly (no jitter)
-  fullScale: 0.45,         // scaled loudness that maps to full energy
+  fullScale: 0.3,          // scaled RMS loudness that maps to full energy
   dynamicsGamma: 1.4,      // >1 keeps moderate loudness mild so only loud sections peak
   bandSmooth: 0.16,        // per-frame smoothing of visualized frequency bands (anti-jitter)
   defaultSensitivity: 1.0, // loudness gain; user-tunable to calibrate to their audio level

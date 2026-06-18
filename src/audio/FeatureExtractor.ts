@@ -41,10 +41,16 @@ export class FeatureExtractor {
 
   constructor(private sampleRate: number, private fftSize: number) {}
 
-  process(data: Uint8Array, dt: number): AudioFeatures {
+  /**
+   * @param data frequency-domain magnitudes (for bands + onset detection)
+   * @param rms  time-domain RMS amplitude 0..1 — a TRUE absolute loudness measure.
+   *   (Frequency-byte data is auto-scaled to a dB window and registers faint sound as
+   *   loud, so loudness must come from the waveform amplitude instead.)
+   */
+  process(data: Uint8Array, rms: number, dt: number): AudioFeatures {
     this.clock += dt;
     // Smooth the visualized bands so spike/breathing amplitudes ease instead of
-    // snapping frame-to-frame on noisy real-mic input.
+    // snapping frame-to-frame on noisy input.
     const raw = computeBands(data, this.sampleRate, this.fftSize);
     this.bands.bass += (raw.bass - this.bands.bass) * ENERGY.bandSmooth;
     this.bands.lowMid += (raw.lowMid - this.bands.lowMid) * ENERGY.bandSmooth;
@@ -52,11 +58,8 @@ export class FeatureExtractor {
     this.bands.high += (raw.high - this.bands.high) * ENERGY.bandSmooth;
     const bands: FrequencyBands = { ...this.bands };
 
-    // instantaneous loudness = mean normalized magnitude
-    let sum = 0;
-    for (let i = 0; i < data.length; i++) sum += data[i] / 255;
-    const inst = sum / data.length;
-    this.loudness += (inst - this.loudness) * SMOOTHING.loudness;
+    // Loudness = smoothed waveform RMS (genuine amplitude; silence -> ~0).
+    this.loudness += (rms - this.loudness) * SMOOTHING.loudness;
 
     // ABSOLUTE intensity: how loud the music actually is, on a fixed scale (calibrated
     // by `gain`). A steady moderate beat sits low; only genuinely loud sections approach
