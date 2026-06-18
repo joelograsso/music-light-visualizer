@@ -8,7 +8,7 @@ export class CoreLayer implements Layer {
     const { ctx, cx, cy, features: f, palette: p, t } = env;
     const minDim = Math.min(env.w, env.h);
     const bass = f.bands.bass; // smoothed band drives the spikes — no spiky onset term
-    const coreR = coreRadius(f.energy, f.bands, minDim);
+    const coreR = coreRadius(f.energy, f.presence, f.bands, minDim);
     const spd = f.motionSpeed;
     const hueBase = p.baseHue;
 

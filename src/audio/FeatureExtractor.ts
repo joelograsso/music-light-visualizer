@@ -108,7 +108,7 @@ export class FeatureExtractor {
     const tempoBpm = estimateTempo(this.onsetTimes);
     const motionSpeed = computeMotionSpeed(this.energy, tempoBpm);
 
-    return { loudness: this.loudness, energy: this.energy, bands, beat, motionSpeed, tempoBpm };
+    return { loudness: this.loudness, energy: this.energy, bands, beat, motionSpeed, tempoBpm, presence: this.presence };
   }
 }
 

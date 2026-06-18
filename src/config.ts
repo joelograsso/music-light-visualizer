@@ -37,8 +37,14 @@ export const GATES = {
   kaleidoscope: [0.38, 0.58] as [number, number],
 };
 
-/** Core ring sizing, expressed as a fraction of min(canvasW, canvasH). */
-export const CORE = { maxRadiusFrac: 0.28, growthFrac: 0.34 };
+/**
+ * Core ring sizing, as a fraction of min(canvasW, canvasH).
+ *  - minRadiusFrac: baseline size held while a song is playing (even quiet passages).
+ *  - maxRadiusFrac: full size at peak energy (and the hard cap).
+ * The actual radius interpolates min..max by energy, scaled by `presence` so the ring
+ * closes to a point only in real silence (song start/end), not during the song.
+ */
+export const CORE = { minRadiusFrac: 0.1, maxRadiusFrac: 0.28 };
 
 /** Particle caps for performance (raised so blooms/shards can fill the screen). */
 export const CAPS = { blooms: 1300, shards: 360 };

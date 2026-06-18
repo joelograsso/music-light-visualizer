@@ -14,7 +14,7 @@ export class BloomLayer implements Layer {
   update(env: RenderEnv): void {
     const { features: f, t, gates, cx, cy } = env;
     const minDim = Math.min(env.w, env.h);
-    const coreR = coreRadius(f.energy, f.bands, minDim);
+    const coreR = coreRadius(f.energy, f.presence, f.bands, minDim);
 
     // Bursts emit from the ring. Aggressiveness scales with energy: at low energy
     // they're rare and small; at high energy they fire on weaker onsets, far more
