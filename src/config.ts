@@ -30,16 +30,16 @@ export const ENERGY = {
 
 /** Energy gate ranges for progressive layering (smoothed energy 0..1). */
 export const GATES = {
-  ribbons: [0.30, 0.45] as [number, number],
-  blooms: [0.50, 0.62] as [number, number],
-  kaleidoscope: [0.74, 0.86] as [number, number],
+  ribbons: [0.12, 0.25] as [number, number],
+  blooms: [0.22, 0.38] as [number, number],
+  kaleidoscope: [0.38, 0.58] as [number, number],
 };
 
 /** Core ring sizing, expressed as a fraction of min(canvasW, canvasH). */
 export const CORE = { maxRadiusFrac: 0.28, growthFrac: 0.34 };
 
-/** Particle caps for performance. */
-export const CAPS = { blooms: 900, shards: 220 };
+/** Particle caps for performance (raised so blooms/shards can fill the screen). */
+export const CAPS = { blooms: 1300, shards: 360 };
 
 /** Spotify — fill in your registered app's values. */
 export const SPOTIFY = {
