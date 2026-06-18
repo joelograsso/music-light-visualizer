@@ -1,3 +1,6 @@
+import { SEGMENT } from '../../config';
+import type { Section, SectionTier } from './types';
+
 /** Cosine similarity of two equal-length vectors; 0 if either is all-zero. */
 export function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0, na = 0, nb = 0;
@@ -69,4 +72,66 @@ export function pickPeaks(novelty: Float32Array, minDistance: number, threshold:
     if (isMax && i - last >= minDistance) { peaks.push(i); last = i; }
   }
   return peaks;
+}
+
+function tierOf(intensity: number, rising: boolean): SectionTier {
+  // A rising arc overrides calm/intense for the lower-energy range: a build-up reads as 'building'.
+  if (rising && intensity < 0.66) return 'building';
+  if (intensity < 0.33) return 'calm';
+  if (intensity < 0.66) return 'intense';
+  return 'peak';
+}
+
+/** Mean of a channel over [t0, t1) seconds. */
+function meanOver(ch: Float32Array, t0: number, t1: number, frameRate: number): number {
+  const a = Math.max(0, Math.round(t0 * frameRate));
+  const b = Math.min(ch.length, Math.round(t1 * frameRate));
+  if (b <= a) return 0;
+  let s = 0; for (let i = a; i < b; i++) s += ch[i];
+  return s / (b - a);
+}
+
+/**
+ * Detect structural sections from beat-synchronous features + the loudness channel. Builds
+ * the novelty curve, picks boundaries (min length minSectionBars bars), then tags each
+ * segment with a relative-loudness intensity (0..1) and tier. Returns [] if there aren't
+ * enough beats to be meaningful. `beatsPerBar` defaults to 4.
+ */
+export function detectSections(
+  beatFeatures: number[][],
+  beats: Float32Array,
+  loudness: Float32Array,
+  frameRate: number,
+  beatsPerBar = 4,
+): Section[] {
+  const n = beatFeatures.length;
+  const duration = beats.length > 0 ? beats[beats.length - 1] : 0;
+  if (n < SEGMENT.kernelBeats || duration <= 0) return [];
+
+  const nov = noveltyCurve(beatFeatures, SEGMENT.kernelBeats);
+  const minDist = Math.max(1, SEGMENT.minSectionBars * beatsPerBar);
+  const peakBeats = pickPeaks(nov, minDist, SEGMENT.peakThreshold);
+
+  // boundary times (seconds) = start (0) + each peak beat's time + end (track duration)
+  const bounds = [0];
+  for (const p of peakBeats) if (p < beats.length) bounds.push(beats[p]);
+  bounds.push(duration);
+
+  // build segments, compute relative intensity from segment mean loudness
+  const raw: { start: number; end: number; mean: number; rising: boolean }[] = [];
+  for (let i = 0; i + 1 < bounds.length; i++) {
+    const start = bounds[i], end = bounds[i + 1];
+    const mean = meanOver(loudness, start, end, frameRate);
+    const firstHalf = meanOver(loudness, start, (start + end) / 2, frameRate);
+    const secondHalf = meanOver(loudness, (start + end) / 2, end, frameRate);
+    raw.push({ start, end, mean, rising: secondHalf > firstHalf * 1.2 });
+  }
+  let lo = Infinity, hi = -Infinity;
+  for (const r of raw) { if (r.mean < lo) lo = r.mean; if (r.mean > hi) hi = r.mean; }
+  const span = hi - lo;
+  return raw.map((r) => {
+    // span ~ 0 (single section, or all segments equally loud): no relative ranking, treat as full.
+    const intensity = span > 1e-6 ? (r.mean - lo) / span : 1;
+    return { start: r.start, end: r.end, intensity, tier: tierOf(intensity, r.rising) };
+  });
 }
