@@ -108,7 +108,7 @@ export class FeatureExtractor {
     const beat = this.beatEnv * (1 - beatConfidence) + this.beatTracker.beatPulse * beatConfidence;
 
     const motionSpeed = computeMotionSpeed(this.energy, tempoBpm);
-    const drop = this.dropDetector.update(this.energy, dt);
+    const drop = this.dropDetector.update(this.energy, this.bands.bass, dt);
 
     return {
       loudness: this.loudness, energy: this.energy, bands, beat,

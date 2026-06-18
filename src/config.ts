@@ -106,6 +106,17 @@ export const DROP = {
   quietReset: 0.05,   // energy below this counts as silence
   gapSec: 1.2,        // sustained silence beyond this resets the warmup (new song)
   warmupSec: 10,      // suppress drops for this long after sound starts
+  // Build-up requirement: a drop must be EARNED by a preceding build — a sustained rise
+  // in a bass-weighted intensity signal. A "build charge" accumulates while that signal
+  // leads its own slow reference, and the drop only fires on the slam's rising edge if
+  // the charge is already high (so the build came BEFORE the slam, not as part of it).
+  bassWeight: 0.6,        // build signal = 0.4*energy + 0.6*bass
+  buildSmooth: 0.12,      // smoothing of the build signal
+  buildSlopeMin: 0.04,    // per-second rise to count as "building" (a gentle ramp)
+  buildSlopeMax: 0.7,     // ...but a faster rise is a sudden jump, not a build (excluded)
+  buildChargeSec: 1.5,    // seconds of building to fully charge
+  buildDecaySec: 0.8,     // charge decays over this while falling (during sound)
+  buildRequired: 0.5,     // minimum build charge for a drop to fire
 };
 
 /** Full-screen kaleidoscope mirror: faded in over this energy range. Segment count
