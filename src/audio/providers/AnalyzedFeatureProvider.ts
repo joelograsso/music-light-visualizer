@@ -89,6 +89,7 @@ export class AnalyzedFeatureProvider implements FeatureProvider {
     const beatConfidence = this.track.beats.length > 1 ? 1 : 0;
     const drop = dropAt(this.track.drops, t);
 
-    return { loudness, energy, bands, beat, motionSpeed, tempoBpm, presence, drop, beatPhase, beatConfidence, anticipation };
+    return { loudness, energy, bands, beat, motionSpeed, tempoBpm, presence, drop, beatPhase, beatConfidence, anticipation,
+      sectionActive: false, sectionBoundary: 0, sectionIntensity: 1 };
   }
 }

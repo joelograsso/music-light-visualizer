@@ -8,6 +8,7 @@ const SILENT: AudioFeatures = {
   loudness: 0, energy: 0, bands: { bass: 0, lowMid: 0, mid: 0, high: 0 },
   beat: 0, motionSpeed: 0.35, tempoBpm: null, presence: 0, drop: 0,
   beatPhase: 0, beatConfidence: 0, anticipation: 0,
+  sectionActive: false, sectionBoundary: 0, sectionIntensity: 1,
 };
 
 export class AudioEngine {

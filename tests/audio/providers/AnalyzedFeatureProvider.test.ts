@@ -9,7 +9,7 @@ function track(over: Partial<AnalyzedTrack> = {}): AnalyzedTrack {
     loudness: z([0, 1, 0]), presence: z([1, 1, 1]),
     bass: z([0, 1, 0]), lowMid: z([0, 0, 0]), mid: z([0, 0, 0]), high: z([0, 0, 0]),
     onset: z([0, 0, 0]), anticipation: z([0, 0.5, 1]),
-    beats: z([0, 0.5, 1, 1.5]), downbeats: z([0]), drops: [],
+    beats: z([0, 0.5, 1, 1.5]), downbeats: z([0]), drops: [], sections: [],
     ...over,
   };
 }

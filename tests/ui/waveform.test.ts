@@ -29,7 +29,7 @@ function tinyTrack(over: Partial<AnalyzedTrack> = {}): AnalyzedTrack {
     loudness: z([0, 1, 0]), presence: z([1, 1, 1]),
     bass: z([0, 0, 0]), lowMid: z([0, 0, 0]), mid: z([0, 0, 0]), high: z([0, 0, 0]),
     onset: z([0, 0, 0]), anticipation: z([0, 0, 0]),
-    beats: z([]), downbeats: z([]), drops: [],
+    beats: z([]), downbeats: z([]), drops: [], sections: [],
     ...over,
   };
 }

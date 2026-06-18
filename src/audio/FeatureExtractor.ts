@@ -141,6 +141,7 @@ export class FeatureExtractor {
       loudness: this.loudness, energy: this.energy, bands, beat,
       motionSpeed, tempoBpm, presence: this.presence, drop,
       beatPhase, beatConfidence, anticipation: 0,
+      sectionActive: false, sectionBoundary: 0, sectionIntensity: 1,
     };
   }
 }

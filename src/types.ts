@@ -17,6 +17,9 @@ export interface AudioFeatures {
   beatPhase: number;       // 0..1 position within the beat (0 = on the beat), phase-locked
   beatConfidence: number;  // 0..1 how locked-in the beat tracker is
   anticipation: number;    // 0..1 build-up glow before a known drop (analyzed files only; 0 live)
+  sectionActive: boolean;  // true when an analyzed track exposes sections (file only)
+  sectionBoundary: number; // 1 on the frame the playhead crosses into a new section, else 0
+  sectionIntensity: number; // 0..1 current section intensity; 1 (neutral) when no sections
 }
 
 /** Per-layer gate opacities produced by StageController. */

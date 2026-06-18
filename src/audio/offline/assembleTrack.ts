@@ -53,6 +53,6 @@ export function assembleTrack(raw: RawTrack): AnalyzedTrack {
     frameRate: raw.frameRate,
     tempoBpm: raw.tempoBpm,
     loudness, presence, bass, lowMid, mid, high, onset, anticipation,
-    beats: raw.beats, downbeats, drops,
+    beats: raw.beats, downbeats, drops, sections: [],
   };
 }
