@@ -165,6 +165,6 @@ export const SCENE_SWITCH = { minSeconds: 8, maxSeconds: 30 };
 /** Spotify — fill in your registered app's values. */
 export const SPOTIFY = {
   clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID ?? '',
-  redirectUri: import.meta.env.VITE_SPOTIFY_REDIRECT_URI ?? 'http://localhost:5173',
+  redirectUri: import.meta.env.VITE_SPOTIFY_REDIRECT_URI ?? 'http://127.0.0.1:5173',
   scopes: 'user-read-currently-playing user-read-playback-state',
 };
