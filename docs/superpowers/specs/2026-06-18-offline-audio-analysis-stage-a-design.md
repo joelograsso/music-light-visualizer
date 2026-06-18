@@ -165,9 +165,10 @@ producing a `LiveFeatureProvider`) so the app never dead-ends on a problem file.
   the existing absolute-loudness semantics; NOT auto-gain/normalized).
 - **bands** — bass/lowMid/mid/high using the existing `BAND_EDGES`, computed on a
   log-magnitude scale so they read like the real-time path.
-- **energy** — derived from loudness with the existing gamma/full-scale shaping
-  (`ENERGY.fullScale`, `ENERGY.dynamicsGamma`) so visual energy matches the live look,
-  then zero-phase smoothed (see step 6).
+- **presence** — a 0..1 "a song is playing" gate derived from raw loudness (zero-phase
+  ramped), stored so the provider needn't run an envelope. Final `energy` is **not** baked
+  in; it is derived in the provider from `loudness × sensitivity` (see Playback), so the
+  sensitivity slider stays live for files.
 - **onset envelope (ODF)** — low-weighted, half-wave-rectified spectral flux mirroring
   `OnsetDetector`'s weighting; drives tempo + beat grid.
 
@@ -202,7 +203,8 @@ removes the stop-and-start jitter the user dislikes.
 
 ### 7. Drops + anticipation
 
-`drops.ts` — non-causal scan of the (smoothed) energy + bass curves: find a **sustained
+`drops.ts` — non-causal scan of an internal energy curve (computed at unit sensitivity)
+plus the bass channel: find a **sustained
 build** (a rising bass-weighted signal over ~1–2 bars) followed by a **sudden slam**
 (sharp positive jump), confirmed using look-ahead, then **snap the drop time to the
 nearest downbeat** (where drops actually land). Each drop = `{ time, intensity,
@@ -223,7 +225,7 @@ interface AnalyzedTrack {
   tempoBpm: number;
   // continuous channels, length = frameCount
   loudness: Float32Array;
-  energy: Float32Array;
+  presence: Float32Array;
   bass: Float32Array;
   lowMid: Float32Array;
   mid: Float32Array;
@@ -241,8 +243,12 @@ interface AnalyzedTrack {
 
 `sample()` maps the current playback position → `AudioFeatures`:
 
-- **continuous fields** (`loudness, energy, bands`) — linear-interpolate the channels at
-  `position * frameRate`.
+- **continuous fields** (`loudness, bands, presence, anticipation`) — linear-interpolate
+  the channels at `position * frameRate`.
+- **`energy`** — derived per-frame: `scaled = loudness × sensitivity`, then
+  `energy = presence × min(1, scaled/ENERGY.fullScale)^ENERGY.dynamicsGamma`. No causal
+  envelope (stored loudness is already zero-phase smooth), so the sensitivity slider works
+  for files without reintroducing lag.
 - **`tempoBpm`** — the track's global BPM (known immediately, no warm-up).
 - **`beatPhase`** — from the two surrounding beats: `(t − beatPrev) / (beatNext − beatPrev)`.
   `beatConfidence` is pinned high (the grid is known). `beat` is a pulse peaking near
