@@ -32,7 +32,7 @@ export const ENERGY = {
 
 /** Energy gate ranges for progressive layering (smoothed energy 0..1). */
 export const GATES = {
-  ribbons: [0.12, 0.25] as [number, number],
+  ribbons: [0.05, 0.16] as [number, number],
   blooms: [0.22, 0.38] as [number, number],
   kaleidoscope: [0.38, 0.58] as [number, number],
 };

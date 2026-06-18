@@ -10,7 +10,8 @@ export class RibbonLayer implements Layer {
     const spd = f.motionSpeed;
     for (let b = 0; b < 3; b++) {
       const hue = p.baseHue + b * 70;
-      const amp = (14 + f.energy * 55) + b * 5;
+      // Peaks stay modest when quiet but grow much taller at high energy.
+      const amp = (10 + f.energy * 115) + b * 6;
       ctx.beginPath();
       for (let px = 0; px <= w; px += 10) {
         const y = cy + Math.sin(px * 0.012 + t * spd * 0.8 + b) * amp * Math.sin(px * 0.006 + t * 0.4);
