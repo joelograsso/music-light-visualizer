@@ -201,9 +201,11 @@ export const WAVEFORM = {
   barsAhead: 4,
   beatsPerBar: 4,
   fallbackWindowSec: 8,   // window length when tempo is unknown (tempoBpm === 0)
-  heightScale: 0.9,       // fraction of half-canvas-height at full loudness
-  ampFullScale: 0.3,      // loudness mapped to full bar height
-  colorFloor: 60,         // min RGB channel so quiet slices aren't pure black
-  colorScale: 195,        // channel = colorFloor + share * colorScale (floor+scale = 255)
+  heightScale: 0.9,       // waveform fills this fraction of the half-canvas height
+  bandHeightScale: 0.6,   // a fully-present band reaches this fraction of the half-canvas (then bands stack)
+  peakPercentile: 0.95,   // per-band normalization peak (robust vs lone transients) so quiet highs stay visible
+  lowColor: '#e23b3b',    // lows (kick/bass) — red
+  midColor: '#46c93a',    // mids (vocals/synths) — green
+  highColor: '#3a8ee2',   // highs (hats/risers) — blue
   seekStepBars: 1,        // skip-back / skip-forward step, in bars
 };

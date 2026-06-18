@@ -1,7 +1,8 @@
 import { WAVEFORM } from '../config';
 import type { AnalyzedTrack } from '../audio/offline/types';
 import type { Transport } from '../audio/Transport';
-import { sampleColumn, waveformWindow, barSeconds, pointerTime, formatTime } from './waveform';
+import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime } from './waveform';
+import type { BandPeaks } from './waveform';
 
 const ICON = {
   back: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3v10H3.5V3z"/><path d="M13 3l-7 5 7 5z"/></svg>',
@@ -23,6 +24,7 @@ export class WaveformPanel {
   private timeEl: HTMLElement;
   private track?: AnalyzedTrack;
   private transport?: Transport;
+  private peaks?: BandPeaks;
   private showWave = true;
   private dragging = false;
   private endDrag = (): void => { this.dragging = false; };
@@ -60,6 +62,7 @@ export class WaveformPanel {
   show(track: AnalyzedTrack, transport: Transport): void {
     this.track = track;
     this.transport = transport;
+    this.peaks = bandPeaks(track); // per-band normalization, computed once per track
     this.showWave = true;
     this.wrap.classList.remove('hidden');
     this.toggleBtn.innerHTML = ICON.eye;
@@ -119,7 +122,7 @@ export class WaveformPanel {
 
   private draw(): void {
     const ctx = this.cctx;
-    if (!ctx || !this.transport || !this.track) return;
+    if (!ctx || !this.transport || !this.track || !this.peaks) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     if (w === 0 || h === 0) return;
@@ -134,14 +137,18 @@ export class WaveformPanel {
     const { t0, windowSec } = waveformWindow(pos, this.track.tempoBpm);
     const mid = h / 2;
     const maxHalf = mid * WAVEFORM.heightScale;
+    const unit = maxHalf * WAVEFORM.bandHeightScale; // a fully-present band's height
 
+    // Stacked, mirrored band waveform: lows (red) at the core, mids (green) then highs
+    // (blue) layered outward. Each band is per-band normalized so highs stay visible.
     for (let x = 0; x < w; x++) {
       const t = t0 + (x / w) * windowSec;
       if (t < 0 || t > dur) continue;
-      const s = sampleColumn(this.track, t);
-      const half = Math.min(1, s.amp / WAVEFORM.ampFullScale) * maxHalf;
-      ctx.fillStyle = `rgb(${s.r},${s.g},${s.b})`;
-      ctx.fillRect(x, mid - half, 1, half * 2);
+      const b = sampleBands(this.track, t, this.peaks);
+      let acc = 0;
+      acc = this.stack(ctx, x, mid, acc, b.low * unit, maxHalf, WAVEFORM.lowColor);
+      acc = this.stack(ctx, x, mid, acc, b.mid * unit, maxHalf, WAVEFORM.midColor);
+      this.stack(ctx, x, mid, acc, b.high * unit, maxHalf, WAVEFORM.highColor);
     }
 
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
@@ -153,5 +160,15 @@ export class WaveformPanel {
 
     ctx.fillStyle = '#fff';
     ctx.fillRect(w / 2 - 1, 0, 2, h);
+  }
+
+  /** Draw one mirrored band segment from `acc` outward; returns the new stacked height (clamped). */
+  private stack(ctx: CanvasRenderingContext2D, x: number, mid: number, acc: number, hgt: number, maxHalf: number, color: string): number {
+    if (acc >= maxHalf || hgt <= 0) return acc;
+    const seg = Math.min(hgt, maxHalf - acc);
+    ctx.fillStyle = color;
+    ctx.fillRect(x, mid - acc - seg, 1, seg); // upper half
+    ctx.fillRect(x, mid + acc, 1, seg);       // lower half (mirror)
+    return acc + seg;
   }
 }
