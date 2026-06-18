@@ -168,3 +168,25 @@ export const SPOTIFY = {
   redirectUri: import.meta.env.VITE_SPOTIFY_REDIRECT_URI ?? 'http://127.0.0.1:5173',
   scopes: 'user-read-currently-playing user-read-playback-state',
 };
+
+/**
+ * Stage A — offline whole-track analysis (local files only). The file is decoded and
+ * analyzed in a Web Worker before playback; visuals then read a precomputed timeline by
+ * playback position. See docs/superpowers/specs/2026-06-18-offline-audio-analysis-stage-a-design.md
+ */
+export const OFFLINE = {
+  hop: 512,            // STFT hop in samples (fftSize = FFT_SIZE = 2048) -> ~86 fps @ 44.1k
+  minDb: -80,          // magnitude->level mapping floor (linear, /N-normalized FFT magnitude)
+  maxDb: -20,          // ...and ceiling; each bin maps (db - minDb)/(maxDb - minDb), clamped 0..1
+  smoothAlpha: 0.2,    // per-pass EMA factor for zero-phase smoothing (applied forward + backward)
+  presenceFloor: 0.01, // raw loudness above this counts as "a song is playing"
+  beatTightness: 100,  // DP beat tracker: penalty weight on deviating from the tempo period
+  drops: {
+    slamSec: 0.12,            // window over which a sudden energy jump (the slam) is measured
+    slamJump: 0.18,           // energy must jump >= this across slamSec to be a slam
+    buildLookbackSec: 1.3,    // the build is measured over this window before the slam
+    buildRise: 0.12,          // bass-weighted build signal must rise >= this over the lookback
+    snapMaxSec: 0.25,         // snap a drop to a downbeat only if one is within this
+    anticipationLeadSec: 1.8, // glow ramps up over this long before each drop
+  },
+};
