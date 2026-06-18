@@ -6,6 +6,8 @@ import { CoreLayer } from './visual/layers/CoreLayer';
 import { RibbonLayer } from './visual/layers/RibbonLayer';
 import { BloomLayer } from './visual/layers/BloomLayer';
 import { KaleidoscopeLayer } from './visual/layers/KaleidoscopeLayer';
+import { StarfieldLayer } from './visual/layers/StarfieldLayer';
+import { LightningLayer } from './visual/layers/LightningLayer';
 import { ExplosionLayer } from './visual/layers/ExplosionLayer';
 import { Controls } from './ui/Controls';
 import { SpotifyClient } from './spotify/SpotifyClient';
@@ -17,11 +19,13 @@ const input = new InputManager(engine);
 
 const blooms = new BloomLayer();
 const layers = [
+  new StarfieldLayer(),       // warp background, behind everything
   new RibbonLayer(),
   new CoreLayer(),
   blooms,
   new KaleidoscopeLayer(blooms),
-  new ExplosionLayer(),
+  new LightningLayer(),        // electric arcs over the core
+  new ExplosionLayer(),        // drop payoff, on top
 ];
 
 const renderer = new Renderer(canvas, layers, () => engine.sample());
