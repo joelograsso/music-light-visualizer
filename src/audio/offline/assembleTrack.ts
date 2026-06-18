@@ -2,6 +2,7 @@ import { ENERGY, OFFLINE } from '../../config';
 import { smoothZeroPhase } from './smooth';
 import { findDownbeats } from './downbeats';
 import { findDrops } from './drops';
+import { detectSections } from './segmentation';
 import type { AnalyzedTrack } from './types';
 
 /** Raw per-frame channels + beat grid produced by an analyzer (essentia or pure DSP). */
@@ -17,6 +18,7 @@ export interface RawTrack {
   high: Float32Array;
   onset: Float32Array;     // 0..1
   beats: Float32Array;     // seconds
+  beatFeatures?: number[][]; // per-beat feature vectors for segmentation (optional)
 }
 
 /**
@@ -46,6 +48,9 @@ export function assembleTrack(raw: RawTrack): AnalyzedTrack {
 
   const downbeats = findDownbeats(raw.beats, onset, raw.frameRate);
   const { drops, anticipation } = findDrops(energy, bass, downbeats, raw.frameRate);
+  // beatFeatures only arrive from the offline analyzers (essentia MFCC / pure-DSP bands); the
+  // live/no-feature path passes none, so it gets no sections.
+  const sections = raw.beatFeatures ? detectSections(raw.beatFeatures, raw.beats, loudness, raw.frameRate) : [];
 
   return {
     duration: raw.duration,
@@ -53,6 +58,6 @@ export function assembleTrack(raw: RawTrack): AnalyzedTrack {
     frameRate: raw.frameRate,
     tempoBpm: raw.tempoBpm,
     loudness, presence, bass, lowMid, mid, high, onset, anticipation,
-    beats: raw.beats, downbeats, drops, sections: [],
+    beats: raw.beats, downbeats, drops, sections,
   };
 }
