@@ -20,7 +20,15 @@ const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const engine = new AudioEngine();
 const ui = document.getElementById('ui')!;
 const analysisOverlay = new AnalysisOverlay(ui);
-const input = new InputManager(engine, (stage, pct) => analysisOverlay.update(stage, pct));
+let hud: Hud;
+const input = new InputManager(
+  engine,
+  (stage, pct) => analysisOverlay.update(stage, pct),
+  (track, transport) => {
+    if (track && transport) hud.showWaveform(track, transport);
+    else hud.hideWaveform();
+  },
+);
 
 const blooms = new BloomLayer();
 const layers = [
@@ -36,7 +44,7 @@ const layers = [
 const spotify = new SpotifyClient();
 const fullscreen = new FullscreenController();
 
-const hud = new Hud(ui, {
+hud = new Hud(ui, {
   onSelect: (kind, file) => input.select(kind, file),
   onSensitivity: (sensitivity) => engine.setSensitivity(sensitivity),
   onToggleFullscreen: () => fullscreen.toggle(),
