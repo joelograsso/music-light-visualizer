@@ -64,11 +64,42 @@ export const DROP = {
   decayPerSec: 1.7,   // explosion envelope decay (~0.6s tail)
 };
 
-/** Full-screen kaleidoscope mirror: 8-fold symmetry, faded in over this energy range. */
+/** Full-screen kaleidoscope mirror: faded in over this energy range. Segment count
+ * is chosen by the active scene (see SCENES); this is the fallback default. */
 export const KALEIDO = {
   segments: 8,
   gate: [0.68, 0.86] as [number, number],
 };
+
+/** Warp-speed starfield. Stars streak outward from center; speed scales with energy. */
+export const STARFIELD = {
+  count: 260,
+  baseSpeed: 0.5,   // gentle drift when quiet (fraction of width per second-ish)
+  energySpeed: 7,   // extra warp speed at full energy
+};
+
+/** Lightning arcs snapping out from the core on strong beats. */
+export const LIGHTNING = {
+  beatThreshold: 0.5, // onset strength needed to spawn a bolt
+  minGap: 0.1,        // seconds between bolt volleys
+  maxBolts: 4,        // at full energy
+  decayPerSec: 5,     // bolts flash and fade fast (~0.2s)
+};
+
+/**
+ * Scenes the show rotates through. Each defines a color family (hue) and the
+ * kaleidoscope symmetry (segments). The SceneController switches scene on each drop
+ * (and at least every maxSeconds), so the whole vibe changes as the set evolves.
+ */
+export const SCENES = [
+  { hue: 205, segments: 8 },  // electric blue
+  { hue: 280, segments: 6 },  // violet
+  { hue: 330, segments: 12 }, // hot pink
+  { hue: 30, segments: 8 },   // amber/fire
+  { hue: 150, segments: 10 }, // teal/green
+  { hue: 255, segments: 6 },  // indigo
+];
+export const SCENE_SWITCH = { minSeconds: 8, maxSeconds: 30 };
 
 /** Spotify — fill in your registered app's values. */
 export const SPOTIFY = {

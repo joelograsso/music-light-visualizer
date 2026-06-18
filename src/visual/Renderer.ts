@@ -2,6 +2,7 @@ import type { AudioFeatures } from '../types';
 import { KALEIDO } from '../config';
 import { StageController } from './StageController';
 import { Palette } from './Palette';
+import { SceneController } from './SceneController';
 import type { Layer, RenderEnv } from './Layer';
 
 function gate(v: number, [lo, hi]: [number, number]): number {
@@ -14,6 +15,7 @@ export class Renderer {
   private sctx: CanvasRenderingContext2D;
   private stage = new StageController();
   private palette = new Palette();
+  private scenes = new SceneController(this.palette);
   private t = 0;
   private last = 0;
   private raf = 0;
@@ -53,6 +55,7 @@ export class Renderer {
 
   private frame(dt: number): void {
     const features = this.getFeatures();
+    this.scenes.update(dt, features.drop);   // may retarget the palette on a drop
     this.palette.update(dt, features.motionSpeed);
 
     // --- render the scene into the offscreen buffer ---
@@ -84,7 +87,7 @@ export class Renderer {
 
   /** Mirror the offscreen scene into N-fold radial symmetry around the center. */
   private kaleidoscope(ctx: CanvasRenderingContext2D): void {
-    const N = KALEIDO.segments;
+    const N = this.scenes.segments; // the active scene picks the symmetry
     const seg = (Math.PI * 2) / N;
     const cx = this.w / 2, cy = this.h / 2;
     const R = Math.hypot(this.w, this.h);
