@@ -190,3 +190,20 @@ export const OFFLINE = {
     anticipationLeadSec: 1.8, // glow ramps up over this long before each drop
   },
 };
+
+/**
+ * File transport + band-colored waveform (local files only). A scrolling window shows the
+ * track around the playhead, colored by band energy. See
+ * docs/superpowers/specs/2026-06-18-file-transport-waveform-design.md
+ */
+export const WAVEFORM = {
+  barsBehind: 4,
+  barsAhead: 4,
+  beatsPerBar: 4,
+  fallbackWindowSec: 8,   // window length when tempo is unknown (tempoBpm === 0)
+  heightScale: 0.9,       // fraction of half-canvas-height at full loudness
+  ampFullScale: 0.3,      // loudness mapped to full bar height
+  colorFloor: 60,         // min RGB channel so quiet slices aren't pure black
+  colorScale: 195,        // channel = colorFloor + share * colorScale (floor+scale = 255)
+  seekStepBars: 1,        // skip-back / skip-forward step, in bars
+};
