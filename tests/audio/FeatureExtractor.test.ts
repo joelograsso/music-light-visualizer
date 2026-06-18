@@ -50,3 +50,40 @@ describe('FeatureExtractor energy + onset', () => {
     expect(steady.beat).toBeLessThan(jump.beat);
   });
 });
+
+describe('FeatureExtractor adaptive energy + presence baseline', () => {
+  const fx = () => new FeatureExtractor(SAMPLE_RATE, FFT_SIZE);
+  const fill = (v: number) => new Uint8Array(FFT_SIZE / 2).fill(v);
+  const silent = fill(0);
+
+  it('reaches high energy even for a quietly-mastered (low-amplitude) signal', () => {
+    // A constant but quiet signal should still normalize up to the top of the range,
+    // so the high-energy layers become reachable on any song, not just loud ones.
+    const f = fx();
+    let feat = f.process(silent, 0.016);
+    for (let i = 0; i < 400; i++) feat = f.process(fill(60), 0.016);
+    expect(feat.energy).toBeGreaterThan(0.7);
+  });
+
+  it('holds a baseline and does not collapse on a quiet-but-present passage', () => {
+    const f = fx();
+    let feat = f.process(silent, 0.016);
+    for (let i = 0; i < 400; i++) feat = f.process(fill(180), 0.016); // warm up
+    for (let i = 0; i < 80; i++) feat = f.process(fill(40), 0.016);   // soft passage, still audible
+    expect(feat.energy).toBeGreaterThan(0.3); // stays at/above baseline, not collapsed to zero
+  });
+
+  it('starts low — energy ramps up rather than jumping to baseline on the first loud frame', () => {
+    const f = fx();
+    const first = f.process(fill(200), 0.016);
+    expect(first.energy).toBeLessThan(0.2); // born small; presence has to ramp
+  });
+
+  it('recedes toward zero only when the input is essentially silent', () => {
+    const f = fx();
+    let feat = f.process(silent, 0.016);
+    for (let i = 0; i < 400; i++) feat = f.process(fill(180), 0.016);
+    for (let i = 0; i < 700; i++) feat = f.process(silent, 0.016);
+    expect(feat.energy).toBeLessThan(0.1);
+  });
+});

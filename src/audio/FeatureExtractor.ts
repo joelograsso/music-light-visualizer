@@ -1,4 +1,4 @@
-import { BAND_EDGES, SMOOTHING } from '../config';
+import { BAND_EDGES, SMOOTHING, ENERGY } from '../config';
 import type { FrequencyBands, AudioFeatures } from '../types';
 import { computeMotionSpeed, estimateTempo } from './tempo';
 
@@ -30,6 +30,8 @@ export class FeatureExtractor {
   private prev: Float32Array | null = null;
   private loudness = 0;
   private energy = 0;
+  private peak = ENERGY.peakFloor;  // adaptive loudness peak (auto-gain reference)
+  private presence = 0;             // 0..1 envelope: is sound present / how warmed-up are we
   private fluxMean = 0;     // running mean of spectral flux
   private fluxVar = 1e-6;   // running variance
   private onsetTimes: number[] = [];
@@ -46,7 +48,24 @@ export class FeatureExtractor {
     for (let i = 0; i < data.length; i++) sum += data[i] / 255;
     const inst = sum / data.length;
     this.loudness += (inst - this.loudness) * SMOOTHING.loudness;
-    this.energy += (this.loudness - this.energy) * SMOOTHING.energy;
+
+    // Adaptive auto-gain: track the song's own recent loudness peak (fast rise,
+    // slow decay, floored). Normalizing against it lets quietly-mastered tracks
+    // still reach the top of the range, so high energy is reachable on any song.
+    this.peak = Math.max(this.loudness, this.peak * ENERGY.peakDecay, ENERGY.peakFloor);
+    const dynamics = Math.min(1, this.loudness / this.peak); // 0..1 relative loudness
+
+    // Presence envelope: ramps up while sound plays (core born small, grows to a
+    // baseline) and only recedes toward 0 during genuine silence.
+    const present = this.loudness > ENERGY.silenceThreshold ? 1 : 0;
+    const rate = present ? ENERGY.presenceRise : ENERGY.presenceFall;
+    this.presence += (present - this.presence) * rate;
+
+    // Energy = presence-scaled baseline floor plus the normalized dynamics on top.
+    // While sound is present, energy stays at/above the baseline; it collapses to
+    // zero only as presence decays in silence.
+    const target = this.presence * (ENERGY.baseline + (1 - ENERGY.baseline) * dynamics);
+    this.energy += (target - this.energy) * ENERGY.energySmooth;
 
     // spectral flux onset detection
     let flux = 0;
