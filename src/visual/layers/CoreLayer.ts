@@ -7,7 +7,7 @@ export class CoreLayer implements Layer {
   render(env: RenderEnv): void {
     const { ctx, cx, cy, features: f, palette: p, t } = env;
     const minDim = Math.min(env.w, env.h);
-    const bass = f.bands.bass * 0.6 + f.beat; // spikes stay lively; core size does not use beat
+    const bass = f.bands.bass; // smoothed band drives the spikes — no spiky onset term
     const coreR = coreRadius(f.energy, f.bands, minDim);
     const spd = f.motionSpeed;
     const hueBase = p.baseHue;
@@ -30,9 +30,9 @@ export class CoreLayer implements Layer {
       // slow undulation sweeping around the ring. The `-t` term makes the wave
       // travel clockwise, matching the body rotation above, so the whole ring reads
       // as moving in one consistent direction rather than two opposing ones.
-      const band = Math.abs(Math.sin(i * 0.6 - t * spd * 0.5)) * (0.2 + bass);
+      const band = Math.abs(Math.sin(i * 0.6 - t * spd * 0.4)) * (0.25 + bass);
       // gentle high-energy liveliness, also traveling clockwise (matching sign)
-      const jitter = f.energy * f.energy * Math.sin(i * 7.0 - t * spd * 1.8) * 0.3;
+      const jitter = f.energy * f.energy * Math.sin(i * 7.0 - t * spd * 1.1) * 0.25;
       const len = Math.max(0, (5 + band * 46 + jitter * 40) * (0.3 + f.energy));
       const hue = hueBase + (i / N) * 200;
       const x1 = Math.cos(ang) * coreR, y1 = Math.sin(ang) * coreR;

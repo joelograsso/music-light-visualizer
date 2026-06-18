@@ -32,6 +32,7 @@ export class FeatureExtractor {
   private energy = 0;
   private peak = ENERGY.peakFloor;  // adaptive loudness peak (auto-gain reference)
   private presence = 0;             // 0..1 envelope: is sound present / how warmed-up are we
+  private bands: FrequencyBands = { bass: 0, lowMid: 0, mid: 0, high: 0 }; // smoothed for visuals
   private fluxMean = 0;     // running mean of spectral flux
   private fluxVar = 1e-6;   // running variance
   private onsetTimes: number[] = [];
@@ -41,7 +42,14 @@ export class FeatureExtractor {
 
   process(data: Uint8Array, dt: number): AudioFeatures {
     this.clock += dt;
-    const bands = computeBands(data, this.sampleRate, this.fftSize);
+    // Smooth the visualized bands so spike/breathing amplitudes ease instead of
+    // snapping frame-to-frame on noisy real-mic input.
+    const raw = computeBands(data, this.sampleRate, this.fftSize);
+    this.bands.bass += (raw.bass - this.bands.bass) * ENERGY.bandSmooth;
+    this.bands.lowMid += (raw.lowMid - this.bands.lowMid) * ENERGY.bandSmooth;
+    this.bands.mid += (raw.mid - this.bands.mid) * ENERGY.bandSmooth;
+    this.bands.high += (raw.high - this.bands.high) * ENERGY.bandSmooth;
+    const bands: FrequencyBands = { ...this.bands };
 
     // instantaneous loudness = mean normalized magnitude
     let sum = 0;
@@ -55,7 +63,9 @@ export class FeatureExtractor {
     const targetPeak = Math.max(this.loudness, ENERGY.peakFloor);
     const peakRate = targetPeak > this.peak ? ENERGY.peakRise : ENERGY.peakFall;
     this.peak += (targetPeak - this.peak) * peakRate;
-    const dynamics = Math.min(1, this.loudness / this.peak); // 0..1 relative loudness
+    // Shape the normalized loudness: the gamma (>1) keeps moderate input in the
+    // lower range so only genuinely loud, sustained sound reaches the top.
+    const dynamics = Math.pow(Math.min(1, this.loudness / this.peak), ENERGY.dynamicsGamma);
 
     // Presence envelope: needs SUSTAINED sound to ramp (sparse noise stays low) and
     // only recedes toward 0 during genuine silence. This is the progressive build.

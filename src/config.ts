@@ -18,14 +18,16 @@ export const SMOOTHING = { loudness: 0.4, energy: 0.04 };
  * not from this slow envelope, keeping size changes smooth.
  */
 export const ENERGY = {
-  silenceThreshold: 0.035, // mean normalized magnitude below which we treat input as silence
-  presenceRise: 0.01,      // per-frame ramp toward 1 while sound is sustained (~4-5s to full)
-  presenceFall: 0.012,     // per-frame decay toward 0 during silence (core recedes gently)
-  baseline: 0.25,          // energy floor once warmed up and sound is present
-  energySmooth: 0.03,      // slow tracking of energy target -> progressive build, no jitter
+  silenceThreshold: 0.05,  // mean normalized magnitude below which we treat input as silence
+  presenceRise: 0.006,     // per-frame ramp toward 1 while sound is sustained (~6-8s to full)
+  presenceFall: 0.01,      // per-frame decay toward 0 during silence (core recedes gently)
+  baseline: 0.18,          // energy floor once warmed up and sound is present
+  energySmooth: 0.025,     // slow tracking of energy target -> progressive build, no jitter
+  dynamicsGamma: 1.7,      // >1 shapes normalized loudness so only loud+sustained sound hits the top
   peakRise: 0.02,          // auto-gain reference rises slowly toward sustained loudness
   peakFall: 0.004,         // and decays even more slowly
-  peakFloor: 0.18,         // reference floor so faint/transient noise can't normalize to full
+  peakFloor: 0.22,         // reference floor so faint/transient noise can't normalize to full
+  bandSmooth: 0.16,        // per-frame smoothing of the visualized frequency bands (anti-jitter)
 };
 
 /** Energy gate ranges for progressive layering (smoothed energy 0..1). */
