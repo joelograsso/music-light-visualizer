@@ -43,6 +43,8 @@ const hud = new Hud(ui, {
 
 fullscreen.onChange((active) => hud.controls.setFullscreen(active));
 window.addEventListener('keydown', (e) => {
+  const t = e.target as HTMLElement | null;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
   if (e.key === 'f' || e.key === 'F') fullscreen.toggle();
 });
 
