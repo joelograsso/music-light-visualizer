@@ -1,6 +1,7 @@
-import { CAPS, CORE } from '../../config';
+import { CAPS } from '../../config';
 import { ParticleSystem } from '../ParticleSystem';
 import type { Layer, RenderEnv } from '../Layer';
+import { coreRadius } from '../coreRadius';
 
 export interface ShardRequest { x: number; y: number; vx: number; vy: number; hue: number; size: number; }
 
@@ -13,9 +14,7 @@ export class BloomLayer implements Layer {
   update(env: RenderEnv): void {
     const { features: f, t, gates, cx, cy } = env;
     const minDim = Math.min(env.w, env.h);
-    const maxR = minDim * CORE.maxRadiusFrac;
-    const bass = f.bands.bass * 0.6 + f.beat;
-    const coreR = Math.min(maxR, 2 + f.energy * minDim * CORE.growthFrac + bass * 30 * f.energy);
+    const coreR = coreRadius(f.energy, f.bands, f.beat, minDim);
 
     if (gates.blooms > 0.01 && f.beat > 0.4 && t - this.lastBeat > 0.18) {
       this.lastBeat = t;

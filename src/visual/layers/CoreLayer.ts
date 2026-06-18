@@ -1,5 +1,5 @@
-import { CORE } from '../../config';
 import type { Layer, RenderEnv } from '../Layer';
+import { coreRadius } from '../coreRadius';
 
 export class CoreLayer implements Layer {
   update(_env: RenderEnv): void { /* stateless; driven by features each frame */ }
@@ -7,9 +7,8 @@ export class CoreLayer implements Layer {
   render(env: RenderEnv): void {
     const { ctx, cx, cy, features: f, palette: p, t } = env;
     const minDim = Math.min(env.w, env.h);
-    const maxR = minDim * CORE.maxRadiusFrac;
     const bass = f.bands.bass * 0.6 + f.beat;
-    const coreR = Math.min(maxR, 2 + f.energy * minDim * CORE.growthFrac + bass * 30 * f.energy);
+    const coreR = coreRadius(f.energy, f.bands, f.beat, minDim);
     const spd = f.motionSpeed;
     const hueBase = p.baseHue;
 

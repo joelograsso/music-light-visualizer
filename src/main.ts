@@ -29,7 +29,10 @@ document.getElementById('ui')!.appendChild(nowPlaying.el);
 
 spotify.handleRedirect().then((loggedIn) => {
   if (!loggedIn) return;
-  const poll = async () => { nowPlaying.update(await spotify.nowPlaying()); };
+  const poll = async () => {
+    try { nowPlaying.update(await spotify.nowPlaying()); }
+    catch { /* Spotify temporarily unavailable; overlay stays as-is */ }
+  };
   poll();
   setInterval(poll, 4000);
-});
+}).catch(() => { /* Spotify login/token exchange failed; visualizer unaffected */ });

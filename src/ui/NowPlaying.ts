@@ -1,5 +1,8 @@
 import type { NowPlaying as NP } from '../spotify/SpotifyClient';
 
+const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
 export class NowPlaying {
   readonly el = document.createElement('div');
   constructor(private onLogin: () => void) {
@@ -18,8 +21,8 @@ export class NowPlaying {
     this.el.innerHTML = `
       ${np.albumArtUrl ? `<img src="${np.albumArtUrl}" width="44" height="44" style="border-radius:6px">` : ''}
       <div style="overflow:hidden">
-        <div style="font-weight:600;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">${np.title}</div>
-        <div style="opacity:.7;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">${np.artist}</div>
+        <div style="font-weight:600;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">${esc(np.title)}</div>
+        <div style="opacity:.7;white-space:nowrap;text-overflow:ellipsis;overflow:hidden">${esc(np.artist)}</div>
         <div style="height:3px;background:#ffffff22;border-radius:2px;margin-top:5px">
           <div style="height:100%;width:${pct}%;background:#1db954;border-radius:2px"></div>
         </div>

@@ -18,12 +18,12 @@ describe('ParticleSystem', () => {
     for (let i = 0; i < 5; i++) ps.spawn({ x: i, y: 0, vx: 0, vy: 0, hue: 0, decay: 0.001 });
     expect(ps.count).toBeLessThanOrEqual(2);
   });
-  it('advances position by velocity * motionSpeed', () => {
+  it('advances position by velocity per 60fps frame, scaled by motionSpeed', () => {
     const ps = new ParticleSystem(10);
     ps.spawn({ x: 0, y: 0, vx: 10, vy: 0, hue: 0, decay: 0.001 });
-    ps.update(1, 2);
+    ps.update(1 / 60, 1); // one 60fps frame (step = 1) at speed 1 -> x += 10
     const positions: number[] = [];
     ps.forEach((p) => positions.push(p.x));
-    expect(positions[0]).toBeCloseTo(20, 1);
+    expect(positions[0]).toBeCloseTo(10, 1);
   });
 });

@@ -27,8 +27,8 @@ export class ParticleSystem {
     const step = dt * 60; // normalize so decay/drag tuned for ~60fps frames
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
-      p.x += p.vx * motionSpeed * dt;
-      p.y += p.vy * motionSpeed * dt;
+      p.x += p.vx * motionSpeed * step;
+      p.y += p.vy * motionSpeed * step;
       p.vy += p.gravity * step;
       p.vx *= p.drag; p.vy *= p.drag;
       p.life -= p.decay * (0.6 + motionSpeed * 0.5) * step;

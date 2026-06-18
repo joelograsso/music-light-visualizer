@@ -3,8 +3,10 @@ import type { AudioSource } from './AudioSource';
 export class FileSource implements AudioSource {
   readonly label = 'Audio file';
   readonly audio = new Audio();
+  private objectUrl: string;
   constructor(file: File) {
-    this.audio.src = URL.createObjectURL(file);
+    this.objectUrl = URL.createObjectURL(file);
+    this.audio.src = this.objectUrl;
     this.audio.loop = true;
     this.audio.crossOrigin = 'anonymous';
   }
@@ -14,5 +16,8 @@ export class FileSource implements AudioSource {
     await this.audio.play();
     return node;
   }
-  stop(): void { this.audio.pause(); }
+  stop(): void {
+    this.audio.pause();
+    URL.revokeObjectURL(this.objectUrl);
+  }
 }

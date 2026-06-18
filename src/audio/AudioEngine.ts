@@ -19,9 +19,17 @@ export class AudioEngine {
 
   async use(source: AudioSource): Promise<void> {
     await this.teardown();
-    this.ctx = new AudioContext();
-    const node = await source.connect(this.ctx);
-    this.analyser = this.ctx.createAnalyser();
+    const ctx = new AudioContext();
+    let node: AudioNode;
+    try {
+      node = await source.connect(ctx);
+    } catch (err) {
+      source.stop();
+      await ctx.close();
+      throw err;
+    }
+    this.ctx = ctx;
+    this.analyser = ctx.createAnalyser();
     this.analyser.fftSize = FFT_SIZE;
     this.analyser.smoothingTimeConstant = 0.6;
     node.connect(this.analyser);
@@ -46,5 +54,6 @@ export class AudioEngine {
     this.source?.stop();
     await this.ctx?.close();
     this.ctx = undefined; this.analyser = undefined; this.features = SILENT;
+    this.source = undefined; this.extractor = undefined; this.data = undefined;
   }
 }

@@ -8,7 +8,7 @@ export class Controls {
       'background:rgba(10,12,22,.6);padding:10px 12px;border-radius:10px;font:13px ui-monospace,monospace;';
     this.el.innerHTML = `
       <button data-k="mic">🎤 Mic</button>
-      <button data-k="display">🖥️ Tab/System</button>
+      <button data-k="display" title="Share a browser tab's audio. On macOS, full system audio needs a virtual device like BlackHole.">🖥️ Tab/System</button>
       <label style="cursor:pointer">📁 File<input type="file" accept="audio/*" hidden></label>
       <span id="status" style="opacity:.6;margin-left:6px"></span>`;
     this.el.querySelectorAll('button[data-k]').forEach((b) =>

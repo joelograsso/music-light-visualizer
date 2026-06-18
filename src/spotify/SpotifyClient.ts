@@ -59,19 +59,40 @@ export class SpotifyClient {
     const json = await res.json();
     this.token = json.access_token ?? null;
     if (this.token) sessionStorage.setItem('sp_token', this.token);
+    if (json.refresh_token) localStorage.setItem('sp_refresh', json.refresh_token);
     history.replaceState({}, '', SPOTIFY.redirectUri);
     return !!this.token;
   }
 
   get isLoggedIn(): boolean { return !!this.token; }
 
-  async nowPlaying(): Promise<NowPlaying | null> {
+  private async refresh(): Promise<boolean> {
+    const rt = localStorage.getItem('sp_refresh');
+    if (!rt) return false;
+    const body = new URLSearchParams({
+      client_id: SPOTIFY.clientId, grant_type: 'refresh_token', refresh_token: rt,
+    });
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body,
+    });
+    if (!res.ok) return false;
+    const json = await res.json();
+    this.token = json.access_token ?? null;
+    if (this.token) sessionStorage.setItem('sp_token', this.token);
+    if (json.refresh_token) localStorage.setItem('sp_refresh', json.refresh_token);
+    return !!this.token;
+  }
+
+  async nowPlaying(retry = true): Promise<NowPlaying | null> {
     if (!this.token) return null;
     const res = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
       headers: { Authorization: `Bearer ${this.token}` },
     });
     if (res.status === 204) return null;       // nothing playing
-    if (res.status === 401) { this.token = null; sessionStorage.removeItem('sp_token'); return null; }
+    if (res.status === 401) {
+      if (retry && (await this.refresh())) return this.nowPlaying(false);
+      this.token = null; sessionStorage.removeItem('sp_token'); return null;
+    }
     return parseNowPlaying(await res.json());
   }
 }
