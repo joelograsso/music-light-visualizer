@@ -63,4 +63,34 @@ describe('AnalyzedFeatureProvider', () => {
     expect(f.beat).toBeCloseTo(1, 5);
     expect(f.beatConfidence).toBe(0);
   });
+
+  it('exposes section fields and pulses sectionBoundary on crossing', () => {
+    const t = track({
+      duration: 2,
+      sections: [
+        { start: 0, end: 1, intensity: 0.2, tier: 'calm' },
+        { start: 1, end: 2, intensity: 0.9, tier: 'peak' },
+      ],
+    });
+    let now = 0.5;
+    const p = new AnalyzedFeatureProvider(t, () => now);
+    let f = p.sample();                       // first sample in section 0
+    expect(f.sectionActive).toBe(true);
+    expect(f.sectionIntensity).toBeCloseTo(0.2, 5);
+    expect(f.sectionBoundary).toBe(0);        // no pulse on first read
+    now = 1.5; f = p.sample();                // crossed into section 1
+    expect(f.sectionBoundary).toBe(1);
+    expect(f.sectionIntensity).toBeCloseTo(0.9, 5);
+    now = 1.6; f = p.sample();                // same section
+    expect(f.sectionBoundary).toBe(0);
+  });
+
+  it('reports neutral section fields when there are no sections', () => {
+    let now = 0.5;
+    const p = new AnalyzedFeatureProvider(track({ sections: [] }), () => now);
+    const f = p.sample();
+    expect(f.sectionActive).toBe(false);
+    expect(f.sectionIntensity).toBe(1);
+    expect(f.sectionBoundary).toBe(0);
+  });
 });
