@@ -7,8 +7,8 @@ export class CoreLayer implements Layer {
   render(env: RenderEnv): void {
     const { ctx, cx, cy, features: f, palette: p, t } = env;
     const minDim = Math.min(env.w, env.h);
-    const bass = f.bands.bass * 0.6 + f.beat;
-    const coreR = coreRadius(f.energy, f.bands, f.beat, minDim);
+    const bass = f.bands.bass * 0.6 + f.beat; // spikes stay lively; core size does not use beat
+    const coreR = coreRadius(f.energy, f.bands, minDim);
     const spd = f.motionSpeed;
     const hueBase = p.baseHue;
 

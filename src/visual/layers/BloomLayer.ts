@@ -14,7 +14,7 @@ export class BloomLayer implements Layer {
   update(env: RenderEnv): void {
     const { features: f, t, gates, cx, cy } = env;
     const minDim = Math.min(env.w, env.h);
-    const coreR = coreRadius(f.energy, f.bands, f.beat, minDim);
+    const coreR = coreRadius(f.energy, f.bands, minDim);
 
     if (gates.blooms > 0.01 && f.beat > 0.4 && t - this.lastBeat > 0.18) {
       this.lastBeat = t;

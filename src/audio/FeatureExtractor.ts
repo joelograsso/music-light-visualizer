@@ -49,21 +49,23 @@ export class FeatureExtractor {
     const inst = sum / data.length;
     this.loudness += (inst - this.loudness) * SMOOTHING.loudness;
 
-    // Adaptive auto-gain: track the song's own recent loudness peak (fast rise,
-    // slow decay, floored). Normalizing against it lets quietly-mastered tracks
-    // still reach the top of the range, so high energy is reachable on any song.
-    this.peak = Math.max(this.loudness, this.peak * ENERGY.peakDecay, ENERGY.peakFloor);
+    // Slow auto-gain reference: rises gradually toward sustained loudness and decays
+    // even more slowly, floored. Because it moves slowly, a single transient (a key
+    // tap) can't set the gain, and quiet-but-sustained music still lifts the reference.
+    const targetPeak = Math.max(this.loudness, ENERGY.peakFloor);
+    const peakRate = targetPeak > this.peak ? ENERGY.peakRise : ENERGY.peakFall;
+    this.peak += (targetPeak - this.peak) * peakRate;
     const dynamics = Math.min(1, this.loudness / this.peak); // 0..1 relative loudness
 
-    // Presence envelope: ramps up while sound plays (core born small, grows to a
-    // baseline) and only recedes toward 0 during genuine silence.
+    // Presence envelope: needs SUSTAINED sound to ramp (sparse noise stays low) and
+    // only recedes toward 0 during genuine silence. This is the progressive build.
     const present = this.loudness > ENERGY.silenceThreshold ? 1 : 0;
     const rate = present ? ENERGY.presenceRise : ENERGY.presenceFall;
     this.presence += (present - this.presence) * rate;
 
-    // Energy = presence-scaled baseline floor plus the normalized dynamics on top.
-    // While sound is present, energy stays at/above the baseline; it collapses to
-    // zero only as presence decays in silence.
+    // Energy target = presence-scaled baseline floor plus normalized dynamics on top.
+    // Tracked SLOWLY so the staged energy builds progressively and rejects momentary
+    // spikes — the visible core size and layer gates change smoothly, not jitterily.
     const target = this.presence * (ENERGY.baseline + (1 - ENERGY.baseline) * dynamics);
     this.energy += (target - this.energy) * ENERGY.energySmooth;
 

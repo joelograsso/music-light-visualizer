@@ -86,4 +86,24 @@ describe('FeatureExtractor adaptive energy + presence baseline', () => {
     for (let i = 0; i < 700; i++) feat = f.process(silent, 0.016);
     expect(feat.energy).toBeLessThan(0.1);
   });
+
+  it('builds progressively — not near-full within a fraction of a second of sound', () => {
+    const f = fx();
+    let feat = f.process(silent, 0.016);
+    for (let i = 0; i < 20; i++) feat = f.process(fill(200), 0.016); // ~0.3s of loud sound
+    expect(feat.energy).toBeLessThan(0.4);                           // still ramping, not slammed high
+    for (let i = 0; i < 300; i++) feat = f.process(fill(200), 0.016);
+    expect(feat.energy).toBeGreaterThan(0.6);                        // eventually reaches high
+  });
+
+  it('does not reach high energy on sparse transient noise (e.g. keyboard taps)', () => {
+    const f = fx();
+    let feat = f.process(silent, 0.016);
+    // ~5s of sparse broadband taps: one loud frame every ~0.25s, silence in between
+    for (let i = 0; i < 320; i++) {
+      const tap = i % 16 === 0;
+      feat = f.process(tap ? fill(160) : silent, 0.016);
+    }
+    expect(feat.energy).toBeLessThan(0.4);
+  });
 });
