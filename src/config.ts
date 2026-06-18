@@ -49,6 +49,27 @@ export const CORE = { minRadiusFrac: 0.1, maxRadiusFrac: 0.28 };
 /** Particle caps for performance (raised so blooms/shards can fill the screen). */
 export const CAPS = { blooms: 1300, shards: 360 };
 
+/**
+ * Drop detection. A "drop" is a SUDDEN energy jump (not a gradual build), found by
+ * comparing a fast vs slow energy envelope: when the fast one leaps well above the
+ * slow one past a high threshold, fire an explosion. Emits a 0..1 envelope that
+ * spikes and decays, driving the screen flash / shockwave / burst.
+ */
+export const DROP = {
+  fastSmooth: 0.15,   // fast energy envelope (responds in ~0.4s)
+  slowSmooth: 0.02,   // slow energy envelope (responds in ~3s)
+  highThreshold: 0.55,// fast energy must exceed this to count as a drop
+  riseAbove: 0.18,    // ...and lead the slow envelope by at least this (the "sudden" test)
+  cooldownSec: 1.8,   // min seconds between drops
+  decayPerSec: 1.7,   // explosion envelope decay (~0.6s tail)
+};
+
+/** Full-screen kaleidoscope mirror: 8-fold symmetry, faded in over this energy range. */
+export const KALEIDO = {
+  segments: 8,
+  gate: [0.68, 0.86] as [number, number],
+};
+
 /** Spotify — fill in your registered app's values. */
 export const SPOTIFY = {
   clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID ?? '',

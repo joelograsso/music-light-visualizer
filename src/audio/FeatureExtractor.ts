@@ -1,6 +1,7 @@
 import { BAND_EDGES, SMOOTHING, ENERGY } from '../config';
 import type { FrequencyBands, AudioFeatures } from '../types';
 import { computeMotionSpeed, estimateTempo } from './tempo';
+import { DropDetector } from './DropDetector';
 
 export function binForFreq(freq: number, sampleRate: number, fftSize: number): number {
   const binWidth = sampleRate / fftSize;
@@ -38,6 +39,7 @@ export class FeatureExtractor {
   private fluxVar = 1e-6;   // running variance
   private onsetTimes: number[] = [];
   private clock = 0;
+  private dropDetector = new DropDetector();
 
   constructor(private sampleRate: number, private fftSize: number) {}
 
@@ -107,8 +109,12 @@ export class FeatureExtractor {
 
     const tempoBpm = estimateTempo(this.onsetTimes);
     const motionSpeed = computeMotionSpeed(this.energy, tempoBpm);
+    const drop = this.dropDetector.update(this.energy, dt);
 
-    return { loudness: this.loudness, energy: this.energy, bands, beat, motionSpeed, tempoBpm, presence: this.presence };
+    return {
+      loudness: this.loudness, energy: this.energy, bands, beat,
+      motionSpeed, tempoBpm, presence: this.presence, drop,
+    };
   }
 }
 

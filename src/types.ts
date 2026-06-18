@@ -13,6 +13,7 @@ export interface AudioFeatures {
   motionSpeed: number;     // global motion multiplier (~0.35..1.6)
   tempoBpm: number | null; // running tempo estimate; null until confident
   presence: number;        // 0..1 "a song is playing" envelope; gates the core's baseline size
+  drop: number;            // 0..1 explosion envelope; spikes on a detected drop, then decays
 }
 
 /** Per-layer gate opacities produced by StageController. */
