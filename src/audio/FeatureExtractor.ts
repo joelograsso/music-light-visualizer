@@ -1,6 +1,6 @@
 import { BAND_EDGES, SMOOTHING } from '../config';
 import type { FrequencyBands, AudioFeatures } from '../types';
-import { computeMotionSpeed } from './tempo';
+import { computeMotionSpeed, estimateTempo } from './tempo';
 
 export function binForFreq(freq: number, sampleRate: number, fftSize: number): number {
   const binWidth = sampleRate / fftSize;
@@ -10,7 +10,7 @@ export function binForFreq(freq: number, sampleRate: number, fftSize: number): n
 /** Average normalized (0..1) magnitude across [loHz, hiHz). */
 function bandAvg(data: Uint8Array, loHz: number, hiHz: number, sr: number, fft: number): number {
   const lo = binForFreq(loHz, sr, fft);
-  const hi = Math.min(data.length - 1, binForFreq(hiHz, sr, fft));
+  const hi = Math.min(data.length, binForFreq(hiHz, sr, fft));
   if (hi <= lo) return 0;
   let sum = 0;
   for (let i = lo; i < hi; i++) sum += data[i] / 255;
@@ -84,16 +84,3 @@ export class FeatureExtractor {
   }
 }
 
-/** Median inter-onset interval -> BPM, or null if too few onsets. */
-export function estimateTempo(onsetTimes: number[]): number | null {
-  if (onsetTimes.length < 4) return null;
-  const intervals: number[] = [];
-  for (let i = 1; i < onsetTimes.length; i++) intervals.push(onsetTimes[i] - onsetTimes[i - 1]);
-  intervals.sort((a, b) => a - b);
-  const median = intervals[Math.floor(intervals.length / 2)];
-  if (median <= 0) return null;
-  let bpm = 60 / median;
-  while (bpm < 70) bpm *= 2;   // fold into a musical range
-  while (bpm > 180) bpm /= 2;
-  return bpm;
-}
