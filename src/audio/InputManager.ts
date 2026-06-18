@@ -1,12 +1,13 @@
 import { AudioEngine } from './AudioEngine';
 import { MicSource } from './sources/MicSource';
 import { DisplaySource } from './sources/DisplaySource';
-import { FileSource } from './sources/FileSource';
+import { AnalyzedFileSource } from './sources/AnalyzedFileSource';
+import type { ProgressFn } from './sources/AnalyzedFileSource';
 
 export type SourceKind = 'mic' | 'display' | 'file';
 
 export class InputManager {
-  constructor(private engine: AudioEngine) {}
+  constructor(private engine: AudioEngine, private onProgress?: ProgressFn) {}
 
   async select(kind: SourceKind, file?: File): Promise<void> {
     switch (kind) {
@@ -14,7 +15,7 @@ export class InputManager {
       case 'display': return this.engine.use(new DisplaySource());
       case 'file':
         if (!file) throw new Error('No file provided');
-        return this.engine.use(new FileSource(file));
+        return this.engine.use(new AnalyzedFileSource(file, this.onProgress));
     }
   }
 }
