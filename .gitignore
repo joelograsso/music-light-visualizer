@@ -1,6 +1,7 @@
 node_modules/
 .superpowers/
 dist/
+.vite/
 .DS_Store
 .env
 .playwright-mcp/
