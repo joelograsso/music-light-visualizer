@@ -85,6 +85,22 @@ export class Renderer {
       ctx.globalAlpha = 1;
     }
 
+    // Pre-drop build-up: a swelling radial glow during the bars before a known drop
+    // (analyzed files only; `anticipation` is 0 on the live path).
+    const a = features.anticipation;
+    if (a > 0.01) {
+      const cx = this.w / 2, cy = this.h / 2;
+      const r = Math.hypot(this.w, this.h) * (0.3 + 0.7 * a);
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      const hue = this.palette.baseHue;
+      grad.addColorStop(0, `hsla(${hue}, 95%, 65%, ${0.22 * a})`);
+      grad.addColorStop(1, 'hsla(0, 0%, 0%, 0)');
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, this.w, this.h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
     // Hand the current features + eased scene hue to any UI overlay.
     this.onFrame?.(features, this.palette.baseHue);
   }

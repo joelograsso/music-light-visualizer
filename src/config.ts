@@ -168,3 +168,60 @@ export const SPOTIFY = {
   redirectUri: import.meta.env.VITE_SPOTIFY_REDIRECT_URI ?? 'http://127.0.0.1:5173',
   scopes: 'user-read-currently-playing user-read-playback-state',
 };
+
+/**
+ * Stage A — offline whole-track analysis (local files only). The file is decoded and
+ * analyzed in a Web Worker before playback; visuals then read a precomputed timeline by
+ * playback position. See docs/superpowers/specs/2026-06-18-offline-audio-analysis-stage-a-design.md
+ */
+export const OFFLINE = {
+  hop: 512,            // STFT hop in samples (fftSize = FFT_SIZE = 2048) -> ~86 fps @ 44.1k
+  minDb: -80,          // magnitude->level mapping floor (linear, /N-normalized FFT magnitude)
+  maxDb: -20,          // ...and ceiling; each bin maps (db - minDb)/(maxDb - minDb), clamped 0..1
+  smoothAlpha: 0.2,    // per-pass EMA factor for zero-phase smoothing (applied forward + backward)
+  presenceFloor: 0.01, // raw loudness above this counts as "a song is playing"
+  beatTightness: 100,  // DP beat tracker: penalty weight on deviating from the tempo period
+  drops: {
+    slamSec: 0.12,            // window over which a sudden energy jump (the slam) is measured
+    slamJump: 0.18,           // energy must jump >= this across slamSec to be a slam
+    buildLookbackSec: 1.3,    // the build is measured over this window before the slam
+    buildRise: 0.12,          // bass-weighted build signal must rise >= this over the lookback
+    snapMaxSec: 0.25,         // snap a drop to a downbeat only if one is within this
+    anticipationLeadSec: 1.8, // glow ramps up over this long before each drop
+  },
+};
+
+/**
+ * File transport + band-colored waveform (local files only). A scrolling window shows the
+ * track around the playhead, colored by band energy. See
+ * docs/superpowers/specs/2026-06-18-file-transport-waveform-design.md
+ */
+export const WAVEFORM = {
+  barsBehind: 4,
+  barsAhead: 4,
+  beatsPerBar: 4,
+  fallbackWindowSec: 8,   // window length when tempo is unknown (tempoBpm === 0)
+  heightScale: 0.9,       // waveform fills this fraction of the half-canvas height
+  bandHeightScale: 0.6,   // a fully-present band reaches this fraction of the half-canvas (then bands stack)
+  peakPercentile: 0.95,   // per-band normalization peak (robust vs lone transients) so quiet highs stay visible
+  lowColor: '#e23b3b',    // lows (kick/bass) — red
+  midColor: '#46c93a',    // mids (vocals/synths) — green
+  highColor: '#3a8ee2',   // highs (hats/risers) — blue
+  seekStepBars: 1,        // skip-back / skip-forward step, in bars
+};
+
+/**
+ * essentia.js analysis tuning. `rhythmMethod` is RhythmExtractor2013's method ('multifeature'
+ * = most accurate, offline). Bands come from MelBands (24 bands; FrequencyBands throws in
+ * essentia.js 0.1.3 — see docs/superpowers/notes/essentia-api.md). `melBuckets` are the
+ * spike-confirmed mel-band index ranges [start, end) mapped to our 4 buckets; band energies
+ * are dB-mapped to 0..1 so AnalyzedTrack bands stay consistent with the pure-DSP path.
+ */
+export const ESSENTIA = {
+  rhythmMethod: 'multifeature',
+  maxTempo: 208,
+  minTempo: 40,
+  melBuckets: { bass: [0, 1], lowMid: [1, 3], mid: [3, 9], high: [9, 18] } as Record<string, [number, number]>,
+  bandMinDb: -60,   // MelBands energy (dB) mapped to 0
+  bandMaxDb: -10,   // ...and to 1
+};

@@ -13,11 +13,22 @@ import { ExplosionLayer } from './visual/layers/ExplosionLayer';
 import { Hud } from './ui/Hud';
 import { FullscreenController } from './ui/FullscreenController';
 import { IdleHider } from './ui/IdleHider';
+import { AnalysisOverlay } from './ui/AnalysisOverlay';
 import { SpotifyClient } from './spotify/SpotifyClient';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const engine = new AudioEngine();
-const input = new InputManager(engine);
+const ui = document.getElementById('ui')!;
+const analysisOverlay = new AnalysisOverlay(ui);
+let hud: Hud;
+const input = new InputManager(
+  engine,
+  (stage, pct) => analysisOverlay.update(stage, pct),
+  (track, transport) => {
+    if (track && transport) hud.showWaveform(track, transport);
+    else hud.hideWaveform();
+  },
+);
 
 const blooms = new BloomLayer();
 const layers = [
@@ -30,11 +41,10 @@ const layers = [
   new ExplosionLayer(),        // drop payoff, on top
 ];
 
-const ui = document.getElementById('ui')!;
 const spotify = new SpotifyClient();
 const fullscreen = new FullscreenController();
 
-const hud = new Hud(ui, {
+hud = new Hud(ui, {
   onSelect: (kind, file) => input.select(kind, file),
   onSensitivity: (sensitivity) => engine.setSensitivity(sensitivity),
   onToggleFullscreen: () => fullscreen.toggle(),
