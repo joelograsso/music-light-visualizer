@@ -7,26 +7,21 @@ export class RibbonLayer implements Layer {
     const { ctx, w, cy, features: f, palette: p, t, gates } = env;
     const a = gates.ribbons;
     if (a <= 0.01) return;
-    const spd = f.motionSpeed;
-    const RIBBONS = 5;
-    for (let b = 0; b < RIBBONS; b++) {
-      const hue = p.baseHue + b * 50;
+    // Steady drift: the whole waveform rides a single moving coordinate `u`, so the
+    // carrier and its envelope translate together at the SAME constant speed —
+    // independent of energy. This keeps the original wave shape but makes it glide
+    // across the screen smoothly at all times, instead of the carrier sliding through
+    // a near-stationary envelope (which looked like it stopped at random spots and
+    // only moved at high energy).
+    const DRIFT = 95; // px/sec, constant, rightward
+    for (let b = 0; b < 3; b++) {
+      const hue = p.baseHue + b * 70;
       // Peaks stay modest when quiet but grow much taller at high energy.
-      const amp = (10 + f.energy * 115) + b * 5;
-      // Each ribbon gets a DISTINCT wavelength and a DESYNCED envelope, so they weave
-      // and cross consistently and never all pinch flat at the same place (which is
-      // what made them collapse into parallel "lines").
-      const kCarrier = 0.011 + b * 0.0035;
-      const kEnv = 0.006 + b * 0.0019;
-      const carrierPhase = b * 1.3;
-      const envPhase = b * 2.3;
+      const amp = (10 + f.energy * 115) + b * 6;
       ctx.beginPath();
-      for (let px = 0; px <= w; px += 8) {
-        const y =
-          cy +
-          Math.sin(px * kCarrier + t * spd * 0.8 + carrierPhase) *
-            amp *
-            Math.sin(px * kEnv + t * 0.4 + envPhase);
+      for (let px = 0; px <= w; px += 10) {
+        const u = px - DRIFT * t; // shared moving coordinate -> rigid, steady translation
+        const y = cy + Math.sin(u * 0.012 + b) * amp * Math.sin(u * 0.006);
         px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
       }
       ctx.strokeStyle = p.hsl(hue, 80, 60, 0.16 * a);
