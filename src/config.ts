@@ -100,6 +100,12 @@ export const DROP = {
   riseAbove: 0.23,    // ...and lead the slow envelope by at least this (a clear sudden jump)
   cooldownSec: 2.5,   // min seconds between drops
   decayPerSec: 1.7,   // explosion envelope decay (~0.6s tail)
+  // Warmup: no drops in the first warmupSec after a song's sound begins. The slow
+  // baseline lags while energy ramps up from silence, which otherwise looks like a drop
+  // in a song's opening seconds. A sustained silence (gapSec) = a new song, re-warming.
+  quietReset: 0.05,   // energy below this counts as silence
+  gapSec: 1.2,        // sustained silence beyond this resets the warmup (new song)
+  warmupSec: 10,      // suppress drops for this long after sound starts
 };
 
 /** Full-screen kaleidoscope mirror: faded in over this energy range. Segment count

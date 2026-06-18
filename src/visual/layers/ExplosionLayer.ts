@@ -34,7 +34,7 @@ export class ExplosionLayer implements Layer {
     // Fresh trigger: the drop envelope just jumped up.
     if (this.prevDrop < 0.5 && d > 0.9) {
       const coreR = coreRadius(f.energy, f.presence, f.bands, minDim);
-      this.shards = this.buildShatter(Math.hypot(env.w, env.h));
+      this.shards = this.buildShatter(Math.hypot(env.w, env.h), env.palette.baseHue);
       this.rings.push({ r: coreR, life: 1, hue: env.palette.baseHue });
       for (let i = 0; i < 220; i++) {
         const ang = Math.random() * Math.PI * 2;
@@ -64,13 +64,18 @@ export class ExplosionLayer implements Layer {
     this.ps.update(dt, 1);
   }
 
-  /** Fracture the screen into colored shards radiating from the center (two rings deep). */
-  private buildShatter(maxR: number): Shard[] {
+  /**
+   * Fracture the screen into colored shards radiating from the center (two rings deep).
+   * Shard hues are drawn from the current scene's color family (baseHue + a spread) so
+   * the flash matches the colors on screen instead of clashing pastel rainbow.
+   */
+  private buildShatter(maxR: number, baseHue: number): Shard[] {
     const shards: Shard[] = [];
     const N = 16 + Math.floor(Math.random() * 8);
     const angs: number[] = [];
     for (let i = 0; i < N; i++) angs.push((i / N) * Math.PI * 2 + (Math.random() - 0.5) * 0.3);
     const midR = (0.32 + Math.random() * 0.16) * maxR;
+    const hue = () => baseHue + Math.random() * 120; // within the scene's family (hsl wraps)
     for (let i = 0; i < N; i++) {
       const a0 = angs[i];
       const a1 = (i + 1 === N ? angs[0] + Math.PI * 2 : angs[i + 1]);
@@ -78,8 +83,8 @@ export class ExplosionLayer implements Layer {
       const m1: [number, number] = [Math.cos(a1) * midR, Math.sin(a1) * midR];
       const e0: [number, number] = [Math.cos(a0) * maxR, Math.sin(a0) * maxR];
       const e1: [number, number] = [Math.cos(a1) * maxR, Math.sin(a1) * maxR];
-      shards.push({ pts: [[0, 0], m0, m1], hue: Math.random() * 360 });
-      shards.push({ pts: [m0, e0, e1, m1], hue: Math.random() * 360 });
+      shards.push({ pts: [[0, 0], m0, m1], hue: hue() });
+      shards.push({ pts: [m0, e0, e1, m1], hue: hue() });
     }
     return shards;
   }
