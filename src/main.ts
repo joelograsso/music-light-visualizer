@@ -13,11 +13,14 @@ import { ExplosionLayer } from './visual/layers/ExplosionLayer';
 import { Hud } from './ui/Hud';
 import { FullscreenController } from './ui/FullscreenController';
 import { IdleHider } from './ui/IdleHider';
+import { AnalysisOverlay } from './ui/AnalysisOverlay';
 import { SpotifyClient } from './spotify/SpotifyClient';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const engine = new AudioEngine();
-const input = new InputManager(engine);
+const ui = document.getElementById('ui')!;
+const analysisOverlay = new AnalysisOverlay(ui);
+const input = new InputManager(engine, (stage, pct) => analysisOverlay.update(stage, pct));
 
 const blooms = new BloomLayer();
 const layers = [
@@ -30,7 +33,6 @@ const layers = [
   new ExplosionLayer(),        // drop payoff, on top
 ];
 
-const ui = document.getElementById('ui')!;
 const spotify = new SpotifyClient();
 const fullscreen = new FullscreenController();
 
