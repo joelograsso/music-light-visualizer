@@ -22,7 +22,8 @@ export class Renderer {
   private w = 0; private h = 0;
 
   constructor(private canvas: HTMLCanvasElement, private layers: Layer[],
-              private getFeatures: () => AudioFeatures) {
+              private getFeatures: () => AudioFeatures,
+              private onFrame?: (features: AudioFeatures, hue: number) => void) {
     this.ctx = canvas.getContext('2d')!;
     this.scene = document.createElement('canvas');
     this.sctx = this.scene.getContext('2d')!;
@@ -83,6 +84,9 @@ export class Renderer {
       this.kaleidoscope(ctx);
       ctx.globalAlpha = 1;
     }
+
+    // Hand the current features + eased scene hue to any UI overlay.
+    this.onFrame?.(features, this.palette.baseHue);
   }
 
   /** Mirror the offscreen scene into N-fold radial symmetry around the center. */
