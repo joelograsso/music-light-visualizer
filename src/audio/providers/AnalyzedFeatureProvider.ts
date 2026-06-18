@@ -77,7 +77,15 @@ export class AnalyzedFeatureProvider implements FeatureProvider {
 
     const tempoBpm = this.track.tempoBpm > 0 ? this.track.tempoBpm : null;
     const motionSpeed = computeMotionSpeed(energy, tempoBpm);
-    const { beat, beatPhase } = beatAt(this.track.beats, t);
+    let beat: number;
+    let beatPhase: number;
+    if (this.track.beats.length > 1) {
+      ({ beat, beatPhase } = beatAt(this.track.beats, t));
+    } else {
+      // No beat grid (silent/short track): fall back to a reactive pulse from the onset envelope.
+      beat = interp(this.track.onset, f);
+      beatPhase = 0;
+    }
     const beatConfidence = this.track.beats.length > 1 ? 1 : 0;
     const drop = dropAt(this.track.drops, t);
 

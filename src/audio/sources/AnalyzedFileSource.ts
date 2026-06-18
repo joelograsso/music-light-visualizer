@@ -28,8 +28,8 @@ export class AnalyzedFileSource implements AudioSource {
 
   async connect(ctx: AudioContext): Promise<AudioNode> {
     try {
-      const arr = await this.file.arrayBuffer();
       this.onProgress?.('decoding', 0);
+      const arr = await this.file.arrayBuffer();
       const buffer = await ctx.decodeAudioData(arr);
       const channels: Float32Array[] = [];
       for (let c = 0; c < buffer.numberOfChannels; c++) channels.push(buffer.getChannelData(c));

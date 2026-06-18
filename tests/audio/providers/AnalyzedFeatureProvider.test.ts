@@ -54,4 +54,13 @@ describe('AnalyzedFeatureProvider', () => {
     const p = new AnalyzedFeatureProvider(track(), () => t);
     expect(p.sample().loudness).toBeCloseTo(0.5, 5);
   });
+
+  it('falls back to a reactive beat from the onset channel when there is no beat grid', () => {
+    const noGrid = track({ beats: Float32Array.from([]), onset: Float32Array.from([0, 1, 0]) });
+    let t = 1; // frameRate 1 -> frame 1 -> onset[1] = 1
+    const p = new AnalyzedFeatureProvider(noGrid, () => t);
+    const f = p.sample();
+    expect(f.beat).toBeCloseTo(1, 5);
+    expect(f.beatConfidence).toBe(0);
+  });
 });
