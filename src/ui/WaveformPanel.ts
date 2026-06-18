@@ -25,6 +25,7 @@ export class WaveformPanel {
   private transport?: Transport;
   private showWave = true;
   private dragging = false;
+  private endDrag = (): void => { this.dragging = false; };
 
   constructor() {
     this.el.className = 'hud-wave hidden';
@@ -53,7 +54,7 @@ export class WaveformPanel {
 
     this.canvas.addEventListener('pointerdown', (e) => { this.dragging = true; this.seekTo(e); });
     this.canvas.addEventListener('pointermove', (e) => { if (this.dragging) this.seekTo(e); });
-    window.addEventListener('pointerup', () => { this.dragging = false; });
+    window.addEventListener('pointerup', this.endDrag);
   }
 
   show(track: AnalyzedTrack, transport: Transport): void {
@@ -69,6 +70,11 @@ export class WaveformPanel {
     this.el.classList.add('hidden');
     this.track = undefined;
     this.transport = undefined;
+  }
+
+  /** Detach the global pointerup listener (call if the panel is ever discarded). */
+  destroy(): void {
+    window.removeEventListener('pointerup', this.endDrag);
   }
 
   /** Called once per render frame. */
