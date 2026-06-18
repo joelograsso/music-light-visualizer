@@ -27,8 +27,11 @@ export class CoreLayer implements Layer {
     const N = Math.max(64, Math.round(coreR * 1.4));
     for (let i = 0; i < N; i++) {
       const ang = (i / N) * Math.PI * 2;
-      const band = Math.abs(Math.sin(i * 0.6 + t * spd * 2.0)) * (0.2 + bass);
-      const jitter = f.energy * Math.sin(i * 12.9 + t * spd * 9.0) * 0.5 * f.energy;
+      // slow undulation sweeping around the ring (calm temporal rate)
+      const band = Math.abs(Math.sin(i * 0.6 + t * spd * 0.5)) * (0.2 + bass);
+      // gentle high-energy liveliness: amplitude scales with energy^2 so it's calm
+      // when quiet, and the temporal rate is modest so it shimmers rather than races
+      const jitter = f.energy * f.energy * Math.sin(i * 7.0 + t * spd * 1.8) * 0.3;
       const len = Math.max(0, (5 + band * 46 + jitter * 40) * (0.3 + f.energy));
       const hue = hueBase + (i / N) * 200;
       const x1 = Math.cos(ang) * coreR, y1 = Math.sin(ang) * coreR;
