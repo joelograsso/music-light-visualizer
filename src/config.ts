@@ -94,7 +94,7 @@ export const CAPS = { blooms: 1300, shards: 360 };
  * spikes and decays, driving the screen flash / shockwave / burst.
  */
 export const DROP = {
-  fastSmooth: 0.15,   // fast energy envelope (responds in ~0.4s)
+  fastSmooth: 0.28,   // fast energy envelope (snappy, so the slam is detected with low latency)
   slowSmooth: 0.02,   // slow energy envelope (responds in ~3s)
   highThreshold: 0.55,// fast energy must exceed this to count as a drop
   riseAbove: 0.23,    // ...and lead the slow envelope by at least this (a clear sudden jump)
@@ -113,10 +113,10 @@ export const DROP = {
   bassWeight: 0.6,        // build signal = 0.4*energy + 0.6*bass
   buildSmooth: 0.12,      // smoothing of the build signal
   buildSlopeMin: 0.04,    // per-second rise to count as "building" (a gentle ramp)
-  buildSlopeMax: 0.7,     // ...but a faster rise is a sudden jump, not a build (excluded)
-  buildChargeSec: 1.5,    // seconds of building to fully charge
+  buildSlopeMax: 0.9,     // ...but a faster rise is a sudden jump, not a build (excluded)
+  buildChargeSec: 1.3,    // seconds of building to fully charge
   buildDecaySec: 0.8,     // charge decays over this while falling (during sound)
-  buildRequired: 0.5,     // minimum build charge for a drop to fire
+  buildRequired: 0.32,    // minimum build charge for a drop to fire (lower = drops fire more readily)
 };
 
 /** Full-screen kaleidoscope mirror: faded in over this energy range. Segment count
