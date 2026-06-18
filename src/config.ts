@@ -28,6 +28,18 @@ export const TEMPO = {
   smooth: 0.04,        // smoothing of the BPM estimate
 };
 
+/**
+ * Phase-locked beat tracker (a PLL). A phase accumulator runs at the detected tempo
+ * and is nudged toward incoming onsets so predicted beats line up with the music.
+ * Lets effects fire ON the beat grid (predictively) rather than after each onset.
+ */
+export const BEAT = {
+  pllGain: 0.12,         // how hard each onset nudges the phase toward it
+  pulseDecayBeats: 0.4,  // beat pulse fades over this fraction of a beat
+  confidenceSmooth: 0.03,// smoothing of beat confidence
+  onsetMinStrength: 0.2, // ignore weak onsets for phase locking
+};
+
 /** Smoothing factors per frame (0..1, higher = snappier). */
 export const SMOOTHING = { loudness: 0.4, energy: 0.04 };
 

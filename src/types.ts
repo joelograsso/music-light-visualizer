@@ -14,6 +14,8 @@ export interface AudioFeatures {
   tempoBpm: number | null; // running tempo estimate; null until confident
   presence: number;        // 0..1 "a song is playing" envelope; gates the core's baseline size
   drop: number;            // 0..1 explosion envelope; spikes on a detected drop, then decays
+  beatPhase: number;       // 0..1 position within the beat (0 = on the beat), phase-locked
+  beatConfidence: number;  // 0..1 how locked-in the beat tracker is
 }
 
 /** Per-layer gate opacities produced by StageController. */
