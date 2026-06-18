@@ -6,6 +6,7 @@ import { CoreLayer } from './visual/layers/CoreLayer';
 import { RibbonLayer } from './visual/layers/RibbonLayer';
 import { BloomLayer } from './visual/layers/BloomLayer';
 import { KaleidoscopeLayer } from './visual/layers/KaleidoscopeLayer';
+import { ExplosionLayer } from './visual/layers/ExplosionLayer';
 import { Controls } from './ui/Controls';
 import { SpotifyClient } from './spotify/SpotifyClient';
 import { NowPlaying } from './ui/NowPlaying';
@@ -15,7 +16,13 @@ const engine = new AudioEngine();
 const input = new InputManager(engine);
 
 const blooms = new BloomLayer();
-const layers = [new RibbonLayer(), new CoreLayer(), blooms, new KaleidoscopeLayer(blooms)];
+const layers = [
+  new RibbonLayer(),
+  new CoreLayer(),
+  blooms,
+  new KaleidoscopeLayer(blooms),
+  new ExplosionLayer(),
+];
 
 const renderer = new Renderer(canvas, layers, () => engine.sample());
 renderer.start();
