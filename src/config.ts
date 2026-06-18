@@ -58,9 +58,9 @@ export const CAPS = { blooms: 1300, shards: 360 };
 export const DROP = {
   fastSmooth: 0.15,   // fast energy envelope (responds in ~0.4s)
   slowSmooth: 0.02,   // slow energy envelope (responds in ~3s)
-  highThreshold: 0.66,// fast energy must exceed this to count as a drop (only big ones)
-  riseAbove: 0.28,    // ...and lead the slow envelope by at least this (a LARGE sudden jump)
-  cooldownSec: 3.5,   // min seconds between drops (a rare, earned moment)
+  highThreshold: 0.55,// fast energy must exceed this to count as a drop
+  riseAbove: 0.23,    // ...and lead the slow envelope by at least this (a clear sudden jump)
+  cooldownSec: 2.5,   // min seconds between drops
   decayPerSec: 1.7,   // explosion envelope decay (~0.6s tail)
 };
 
