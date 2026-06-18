@@ -117,6 +117,12 @@ export const DROP = {
   buildChargeSec: 1.3,    // seconds of building to fully charge
   buildDecaySec: 0.8,     // charge decays over this while falling (during sound)
   buildRequired: 0.32,    // minimum build charge for a drop to fire (lower = drops fire more readily)
+  // Beat-snapping: a detected drop's flash is nudged onto the predicted beat grid so it
+  // lands on a beat. Fire immediately if just past a beat or the beat isn't confident;
+  // otherwise defer to the upcoming beat (but never longer than quantizeMaxWait).
+  quantizeMinConfidence: 0.4,
+  quantizeNowPhase: 0.15, // if we're within this of a beat already, fire now; else wait for the next beat
+  quantizeMaxWait: 0.6,   // ...but never defer longer than this (seconds)
 };
 
 /** Full-screen kaleidoscope mirror: faded in over this energy range. Segment count

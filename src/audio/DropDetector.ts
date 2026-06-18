@@ -12,20 +12,20 @@ import { DROP } from '../config';
  *    the drop only fires on the RISING EDGE of that jump, so the build must have charged
  *    BEFORE the slam (not during it).
  *
- * Returns a 0..1 envelope that spikes to 1 on a drop and decays, with a cooldown.
+ * Returns true on the single frame a drop is detected (with a cooldown between drops).
+ * The flash envelope and its beat-snapped timing are handled by the caller.
  */
 export class DropDetector {
   private fast = 0;
   private slow = 0;
   private cooldown = 0;
-  private env = 0;
   private sinceSound = 0;
   private quietFor = 0;
   private buildSignal = 0;
   private prevBuildSignal = 0;
   private buildCharge = 0;
 
-  update(energy: number, bass: number, dt: number): number {
+  update(energy: number, bass: number, dt: number): boolean {
     this.fast += (energy - this.fast) * DROP.fastSmooth;
     this.slow += (energy - this.slow) * DROP.slowSmooth;
     this.cooldown = Math.max(0, this.cooldown - dt);
@@ -57,12 +57,11 @@ export class DropDetector {
     const slam = this.fast - this.slow > DROP.riseAbove && this.fast > DROP.highThreshold;
 
     if (warmedUp && this.cooldown === 0 && slam && this.buildCharge >= DROP.buildRequired) {
-      this.env = 1;
       this.cooldown = DROP.cooldownSec;
       this.buildCharge = 0; // consume the build; the next drop needs a fresh one
+      return true;
     }
 
-    this.env = Math.max(0, this.env - dt * DROP.decayPerSec);
-    return this.env;
+    return false;
   }
 }

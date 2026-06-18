@@ -1,4 +1,4 @@
-import { BAND_EDGES, SMOOTHING, ENERGY, TEMPO } from '../config';
+import { BAND_EDGES, SMOOTHING, ENERGY, TEMPO, DROP } from '../config';
 import type { FrequencyBands, AudioFeatures } from '../types';
 import { computeMotionSpeed } from './tempo';
 import { DropDetector } from './DropDetector';
@@ -44,6 +44,9 @@ export class FeatureExtractor {
   private onsetEnv = new OnsetEnvelope(TEMPO.rateHz, TEMPO.seconds);
   private beatTracker = new BeatTracker();
   private dropDetector = new DropDetector();
+  private dropEnv = 0;
+  private dropPending = false;
+  private dropPendingTime = 0;
 
   constructor(private sampleRate: number, private fftSize: number) {
     this.onset = new OnsetDetector(sampleRate, fftSize);
@@ -108,7 +111,31 @@ export class FeatureExtractor {
     const beat = this.beatEnv * (1 - beatConfidence) + this.beatTracker.beatPulse * beatConfidence;
 
     const motionSpeed = computeMotionSpeed(this.energy, tempoBpm);
-    const drop = this.dropDetector.update(this.energy, this.bands.bass, dt);
+
+    // Drop detection + beat-snapping: snap the flash onto the predicted beat grid so it
+    // lands on a beat (fire now if just past a beat or the beat isn't confident; else
+    // defer to the next predicted beat, but never longer than quantizeMaxWait).
+    const dropTriggered = this.dropDetector.update(this.energy, this.bands.bass, dt);
+    if (dropTriggered) {
+      // Fire now only if there's no confident grid or we're already right on a beat;
+      // otherwise defer to the next predicted beat so the flash lands at phase ~0.
+      if (beatConfidence < DROP.quantizeMinConfidence || beatPhase < DROP.quantizeNowPhase || beatPhase > 1 - DROP.quantizeNowPhase) {
+        this.dropEnv = 1;
+        this.dropPending = false;
+      } else {
+        this.dropPending = true;
+        this.dropPendingTime = 0;
+      }
+    }
+    if (this.dropPending) {
+      this.dropPendingTime += dt;
+      if (this.beatTracker.beatNow || this.dropPendingTime > DROP.quantizeMaxWait) {
+        this.dropEnv = 1;
+        this.dropPending = false;
+      }
+    }
+    this.dropEnv = Math.max(0, this.dropEnv - dt * DROP.decayPerSec);
+    const drop = this.dropEnv;
 
     return {
       loudness: this.loudness, energy: this.energy, bands, beat,
