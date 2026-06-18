@@ -5,26 +5,33 @@ import { AnalyzedFeatureProvider } from '../providers/AnalyzedFeatureProvider';
 import { LiveFeatureProvider } from '../providers/LiveFeatureProvider';
 import { FileSource } from './FileSource';
 import { mixToMono } from '../offline/mixToMono';
+import { Transport } from '../Transport';
 import type { AnalyzedTrack } from '../offline/types';
 
 export type ProgressStage = 'decoding' | 'analyzing' | 'ready';
 export type ProgressFn = (stage: ProgressStage, pct: number) => void;
+/** Fired when an analyzed file is ready to play, or null when there's no analyzed track. */
+export type ReadyFn = (track: AnalyzedTrack | null, transport: Transport | null) => void;
 
 /**
  * The "analyzed track" mode for local files: decode the whole file, analyze it in a Web
- * Worker, then play it back via an AudioBufferSourceNode while exposing an
- * AnalyzedFeatureProvider that reads the precomputed timeline by playback position. If
- * decode or analysis fails, it falls back to the real-time FileSource path.
+ * Worker, then play it through a pausable/seekable Transport while exposing an
+ * AnalyzedFeatureProvider that reads the precomputed timeline by playback position. When
+ * ready it hands (track, transport) to the UI via onReady. If decode or analysis fails it
+ * falls back to the real-time FileSource path and reports onReady(null, null).
  */
 export class AnalyzedFileSource implements AudioSource {
   readonly label = 'Audio file';
   private track?: AnalyzedTrack;
-  private node?: AudioBufferSourceNode;
-  private startTime = 0;
+  private transport?: Transport;
   private fallback?: FileSource;
   private fallbackNode?: AudioNode;
 
-  constructor(private file: File, private onProgress?: ProgressFn) {}
+  constructor(
+    private file: File,
+    private onProgress?: ProgressFn,
+    private onReady?: ReadyFn,
+  ) {}
 
   async connect(ctx: AudioContext): Promise<AudioNode> {
     try {
@@ -36,30 +43,25 @@ export class AnalyzedFileSource implements AudioSource {
       const mono = mixToMono(channels, buffer.length);
       this.track = await this.analyze(mono, buffer.sampleRate);
 
-      const node = ctx.createBufferSource();
-      node.buffer = buffer;
-      node.loop = true;
-      node.connect(ctx.destination);
-      node.start();
-      this.startTime = ctx.currentTime;
-      this.node = node;
+      this.transport = new Transport(ctx, buffer);
+      this.transport.play();
       this.onProgress?.('ready', 1);
-      return node;
+      this.onReady?.(this.track, this.transport);
+      return this.transport.output;
     } catch {
-      // Unsupported codec or analysis failure -> degrade to the real-time path.
+      // Unsupported codec or analysis failure -> degrade to the real-time path, no panel.
       this.fallback = new FileSource(this.file);
       this.fallbackNode = await this.fallback.connect(ctx);
       this.onProgress?.('ready', 1);
+      this.onReady?.(null, null);
       return this.fallbackNode;
     }
   }
 
   createProvider(ctx: AudioContext): FeatureProvider {
-    if (this.track && this.node) {
-      return new AnalyzedFeatureProvider(
-        this.track,
-        () => ctx.currentTime - this.startTime - (ctx.outputLatency || 0),
-      );
+    if (this.track && this.transport) {
+      const transport = this.transport;
+      return new AnalyzedFeatureProvider(this.track, () => transport.position());
     }
     // Fallback: a live analyser tapping the real-time node.
     const analyser = ctx.createAnalyser();
@@ -79,15 +81,13 @@ export class AnalyzedFileSource implements AudioSource {
         else if (m.type === 'error') { worker.terminate(); reject(new Error(m.message)); }
       };
       worker.onerror = () => { worker.terminate(); reject(new Error('analysis worker failed')); };
-      const copy = mono.slice(); // give the worker its own transferable buffer
+      const copy = mono.slice();
       worker.postMessage({ channel: copy, sampleRate }, [copy.buffer]);
     });
   }
 
   stop(): void {
-    if (this.node) {
-      try { this.node.stop(); } catch { /* already stopped */ }
-    }
+    this.transport?.stop();
     this.fallback?.stop();
   }
 }
