@@ -20,7 +20,10 @@ const layers = [new RibbonLayer(), new CoreLayer(), blooms, new KaleidoscopeLaye
 const renderer = new Renderer(canvas, layers, () => engine.sample());
 renderer.start();
 
-const controls = new Controls((kind, file) => input.select(kind, file));
+const controls = new Controls(
+  (kind, file) => input.select(kind, file),
+  (sensitivity) => engine.setSensitivity(sensitivity),
+);
 document.getElementById('ui')!.appendChild(controls.el);
 
 const spotify = new SpotifyClient();

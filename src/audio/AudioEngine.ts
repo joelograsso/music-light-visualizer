@@ -1,4 +1,4 @@
-import { FFT_SIZE } from '../config';
+import { FFT_SIZE, ENERGY } from '../config';
 import { FeatureExtractor } from './FeatureExtractor';
 import type { AudioFeatures } from '../types';
 import type { AudioSource } from './sources/AudioSource';
@@ -16,6 +16,13 @@ export class AudioEngine {
   private source?: AudioSource;
   private features: AudioFeatures = SILENT;
   private lastTime = 0;
+  private sensitivity = ENERGY.defaultSensitivity;
+
+  /** Set the loudness sensitivity (gain). Persists across source switches. */
+  setSensitivity(value: number): void {
+    this.sensitivity = value;
+    if (this.extractor) this.extractor.gain = value;
+  }
 
   async use(source: AudioSource): Promise<void> {
     await this.teardown();
@@ -35,6 +42,7 @@ export class AudioEngine {
     node.connect(this.analyser);
     this.data = new Uint8Array(this.analyser.frequencyBinCount);
     this.extractor = new FeatureExtractor(this.ctx.sampleRate, FFT_SIZE);
+    this.extractor.gain = this.sensitivity;
     this.source = source;
     this.lastTime = performance.now();
   }

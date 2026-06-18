@@ -51,29 +51,46 @@ describe('FeatureExtractor energy + onset', () => {
   });
 });
 
-describe('FeatureExtractor adaptive energy + presence baseline', () => {
+describe('FeatureExtractor absolute-loudness energy', () => {
   const fx = () => new FeatureExtractor(SAMPLE_RATE, FFT_SIZE);
   const fill = (v: number) => new Uint8Array(FFT_SIZE / 2).fill(v);
   const silent = fill(0);
 
-  it('reaches high energy even for a quietly-mastered (low-amplitude) signal', () => {
-    // A constant but quiet signal should still normalize up to the top of the range,
-    // so the high-energy layers become reachable on any song, not just loud ones.
-    const f = fx();
-    let feat = f.process(silent, 0.016);
-    for (let i = 0; i < 400; i++) feat = f.process(fill(60), 0.016);
-    expect(feat.energy).toBeGreaterThan(0.7);
+  it('is loudness-reactive: a moderate signal reads mild while a loud one reads high', () => {
+    // The whole point of the absolute model: a steady MODERATE level should NOT look
+    // like a loud one. Quieter input -> meaningfully lower energy.
+    const moderate = fx();
+    let m = moderate.process(silent, 0.016);
+    for (let i = 0; i < 400; i++) m = moderate.process(fill(45), 0.016);
+
+    const loud = fx();
+    let l = loud.process(silent, 0.016);
+    for (let i = 0; i < 400; i++) l = loud.process(fill(150), 0.016);
+
+    expect(m.energy).toBeLessThan(0.5);          // moderate stays mild
+    expect(l.energy).toBeGreaterThan(m.energy + 0.25); // loud is clearly higher
   });
 
-  it('holds a baseline and does not collapse on a quiet-but-present passage', () => {
+  it('gets quieter when the music gets quieter (energy drops on a soft passage)', () => {
     const f = fx();
     let feat = f.process(silent, 0.016);
-    for (let i = 0; i < 400; i++) feat = f.process(fill(180), 0.016); // warm up
-    for (let i = 0; i < 80; i++) feat = f.process(fill(40), 0.016);   // soft passage, still audible
-    expect(feat.energy).toBeGreaterThan(0.3); // stays at/above baseline, not collapsed to zero
+    for (let i = 0; i < 400; i++) feat = f.process(fill(180), 0.016); // loud
+    const loudLevel = feat.energy;
+    for (let i = 0; i < 200; i++) feat = f.process(fill(40), 0.016);  // soft passage
+    expect(feat.energy).toBeLessThan(loudLevel * 0.6); // clearly receded with the volume
   });
 
-  it('starts low — energy ramps up rather than jumping to baseline on the first loud frame', () => {
+  it('sensitivity gain raises energy for the same input', () => {
+    const fill45 = fill(45);
+    const lowGain = fx(); lowGain.gain = 0.6;
+    const highGain = fx(); highGain.gain = 2.0;
+    let lo = lowGain.process(silent, 0.016);
+    let hi = highGain.process(silent, 0.016);
+    for (let i = 0; i < 400; i++) { lo = lowGain.process(fill45, 0.016); hi = highGain.process(fill45, 0.016); }
+    expect(hi.energy).toBeGreaterThan(lo.energy);
+  });
+
+  it('starts low — energy ramps up rather than jumping on the first loud frame', () => {
     const f = fx();
     const first = f.process(fill(200), 0.016);
     expect(first.energy).toBeLessThan(0.2); // born small; presence has to ramp

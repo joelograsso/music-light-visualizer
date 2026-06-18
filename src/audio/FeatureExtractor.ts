@@ -30,9 +30,10 @@ export class FeatureExtractor {
   private prev: Float32Array | null = null;
   private loudness = 0;
   private energy = 0;
-  private peak = ENERGY.peakFloor;  // adaptive loudness peak (auto-gain reference)
   private presence = 0;             // 0..1 envelope: is sound present / how warmed-up are we
   private bands: FrequencyBands = { bass: 0, lowMid: 0, mid: 0, high: 0 }; // smoothed for visuals
+  /** Loudness gain (sensitivity). Set from the UI to calibrate to the audio level. */
+  gain = ENERGY.defaultSensitivity;
   private fluxMean = 0;     // running mean of spectral flux
   private fluxVar = 1e-6;   // running variance
   private onsetTimes: number[] = [];
@@ -57,26 +58,19 @@ export class FeatureExtractor {
     const inst = sum / data.length;
     this.loudness += (inst - this.loudness) * SMOOTHING.loudness;
 
-    // Slow auto-gain reference: rises gradually toward sustained loudness and decays
-    // even more slowly, floored. Because it moves slowly, a single transient (a key
-    // tap) can't set the gain, and quiet-but-sustained music still lifts the reference.
-    const targetPeak = Math.max(this.loudness, ENERGY.peakFloor);
-    const peakRate = targetPeak > this.peak ? ENERGY.peakRise : ENERGY.peakFall;
-    this.peak += (targetPeak - this.peak) * peakRate;
-    // Shape the normalized loudness: the gamma (>1) keeps moderate input in the
-    // lower range so only genuinely loud, sustained sound reaches the top.
-    const dynamics = Math.pow(Math.min(1, this.loudness / this.peak), ENERGY.dynamicsGamma);
+    // ABSOLUTE intensity: how loud the music actually is, on a fixed scale (calibrated
+    // by `gain`). A steady moderate beat sits low; only genuinely loud sections approach
+    // the top. The gamma keeps moderate input mild so there's headroom to build into.
+    const scaled = this.loudness * this.gain;
+    const intensity = Math.pow(Math.min(1, scaled / ENERGY.fullScale), ENERGY.dynamicsGamma);
 
-    // Presence envelope: needs SUSTAINED sound to ramp (sparse noise stays low) and
-    // only recedes toward 0 during genuine silence. This is the progressive build.
-    const present = this.loudness > ENERGY.silenceThreshold ? 1 : 0;
+    // Presence envelope: gentle intro ramp + silence gate (blank canvas when quiet).
+    const present = scaled > ENERGY.silenceThreshold ? 1 : 0;
     const rate = present ? ENERGY.presenceRise : ENERGY.presenceFall;
     this.presence += (present - this.presence) * rate;
 
-    // Energy target = presence-scaled baseline floor plus normalized dynamics on top.
-    // Tracked SLOWLY so the staged energy builds progressively and rejects momentary
-    // spikes — the visible core size and layer gates change smoothly, not jitterily.
-    const target = this.presence * (ENERGY.baseline + (1 - ENERGY.baseline) * dynamics);
+    // Energy follows absolute intensity (gated by presence), smoothed so it eases.
+    const target = this.presence * intensity;
     this.energy += (target - this.energy) * ENERGY.energySmooth;
 
     // spectral flux onset detection

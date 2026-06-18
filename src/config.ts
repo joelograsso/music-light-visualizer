@@ -7,27 +7,27 @@ export const BAND_EDGES = { bassMax: 150, lowMidMax: 500, midMax: 2000, highMax:
 export const SMOOTHING = { loudness: 0.4, energy: 0.04 };
 
 /**
- * Energy model. Designed to feel like breathing, not twitching:
- *  - A SLOW auto-gain reference (`peak`) that rises/decays gradually, so a single
- *    transient (a keyboard tap, a click) can't set the gain and slam energy to max.
- *  - A `presence` envelope that needs SUSTAINED sound to ramp, so sparse noise stays low.
- *  - A slow `energySmooth` so the staged energy (which drives core size + layers) builds
- *    progressively over seconds and rejects momentary spikes — smooth, not jittery.
- *  - A reference `peakFloor` high enough that faint room noise can't normalize to full.
- * The core's per-beat "breathing" comes from the smoothed bass band in coreRadius(),
- * not from this slow envelope, keeping size changes smooth.
+ * Energy model — ABSOLUTE loudness, not normalized. The lights track how loud the
+ * music actually is: a steady moderate beat reads mild, only genuinely loud/busy
+ * sections read high. (A relative/auto-gain model made every song look loud because
+ * the current level always became "the loudest thing".) Because absolute level
+ * depends on playback volume, a user-facing `sensitivity` gain calibrates the scale.
+ *  - `fullScale`: the (sensitivity-scaled) loudness mapped to full energy.
+ *  - `dynamicsGamma` (>1): keeps moderate input low so the build has headroom.
+ *  - `presence`: gentle intro ramp + silence gate (blank canvas when quiet).
+ *  - `bandSmooth`: smooths the visualized bands so spikes ease instead of snapping.
  */
 export const ENERGY = {
-  silenceThreshold: 0.05,  // mean normalized magnitude below which we treat input as silence
-  presenceRise: 0.006,     // per-frame ramp toward 1 while sound is sustained (~6-8s to full)
-  presenceFall: 0.01,      // per-frame decay toward 0 during silence (core recedes gently)
-  baseline: 0.18,          // energy floor once warmed up and sound is present
-  energySmooth: 0.025,     // slow tracking of energy target -> progressive build, no jitter
-  dynamicsGamma: 1.7,      // >1 shapes normalized loudness so only loud+sustained sound hits the top
-  peakRise: 0.02,          // auto-gain reference rises slowly toward sustained loudness
-  peakFall: 0.004,         // and decays even more slowly
-  peakFloor: 0.22,         // reference floor so faint/transient noise can't normalize to full
-  bandSmooth: 0.16,        // per-frame smoothing of the visualized frequency bands (anti-jitter)
+  silenceThreshold: 0.03,  // scaled loudness below which we treat input as silence
+  presenceRise: 0.01,      // per-frame ramp toward 1 while sound is present (gentle intro)
+  presenceFall: 0.012,     // per-frame decay toward 0 during silence (core recedes)
+  energySmooth: 0.04,      // tracks the energy target smoothly (no jitter)
+  fullScale: 0.45,         // scaled loudness that maps to full energy
+  dynamicsGamma: 1.4,      // >1 keeps moderate loudness mild so only loud sections peak
+  bandSmooth: 0.16,        // per-frame smoothing of visualized frequency bands (anti-jitter)
+  defaultSensitivity: 1.0, // loudness gain; user-tunable to calibrate to their audio level
+  minSensitivity: 0.4,
+  maxSensitivity: 2.5,
 };
 
 /** Energy gate ranges for progressive layering (smoothed energy 0..1). */
