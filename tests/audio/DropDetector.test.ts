@@ -1,43 +1,94 @@
 import { describe, it, expect } from 'vitest';
 import { DropDetector } from '../../src/audio/DropDetector';
 
+const FPS = 1 / 0.016;
+
+/** Hold a steady level (bass tracks energy). */
+function hold(d: DropDetector, energy: number, seconds: number): void {
+  const n = Math.round(seconds * FPS);
+  for (let i = 0; i < n; i++) d.update(energy, energy * 0.85, 0.016);
+}
+
+/** A build-up: energy/bass ramp up over `seconds`. */
+function build(d: DropDetector, from: number, to: number, seconds: number): void {
+  const n = Math.round(seconds * FPS);
+  for (let i = 0; i < n; i++) {
+    const e = from + (to - from) * (i / n);
+    d.update(e, e * 0.85, 0.016);
+  }
+}
+
+/** Run a slam for ~`seconds`; return whether a drop triggered. */
+function slamFired(d: DropDetector, energy: number, seconds: number): boolean {
+  const n = Math.round(seconds * FPS);
+  let fired = false;
+  for (let i = 0; i < n; i++) if (d.update(energy, energy * 0.8, 0.016)) fired = true;
+  return fired;
+}
+
 describe('DropDetector', () => {
-  it('fires a strong envelope on a sudden energy jump', () => {
+  it('fires when a slam is preceded by a build-up (after warmup)', () => {
     const d = new DropDetector();
-    for (let i = 0; i < 120; i++) d.update(0.35, 0.016); // settle at moderate
-    let peak = 0;
-    for (let i = 0; i < 40; i++) peak = Math.max(peak, d.update(0.9, 0.016)); // sudden jump
-    expect(peak).toBeGreaterThan(0.9);
+    hold(d, 0.3, 11);          // groove past the warmup
+    build(d, 0.3, 0.6, 2.5);   // build-up
+    expect(slamFired(d, 0.95, 0.7)).toBe(true);
   });
 
-  it('does NOT fire on a slow gradual ramp', () => {
+  it('does NOT fire on a sudden slam with NO build-up', () => {
     const d = new DropDetector();
-    let peak = 0;
+    hold(d, 0.3, 11);          // steady groove, no build
+    expect(slamFired(d, 0.9, 1.0)).toBe(false);
+  });
+
+  it('does NOT fire during a song’s opening seconds (warmup), even with a build', () => {
+    const d = new DropDetector();
+    build(d, 0.2, 0.6, 2.5);   // build, but only ~2.5s into the song
+    expect(slamFired(d, 0.95, 0.7)).toBe(false);
+  });
+
+  it('does NOT fire on the intro ramp-up from silence', () => {
+    const d = new DropDetector();
+    let fired = false;
+    for (let i = 0; i < 180; i++) {
+      const e = Math.min(0.9, (i / 180) * 0.9);
+      if (d.update(e, e * 0.85, 0.016)) fired = true;
+    }
+    expect(fired).toBe(false);
+  });
+
+  it('does NOT fire on a slow gradual ramp (no distinct slam)', () => {
+    const d = new DropDetector();
+    hold(d, 0.2, 11);
+    let fired = false;
     for (let i = 0; i < 600; i++) {
-      const en = Math.min(0.9, (i / 600) * 0.9); // ~10s ramp
-      peak = Math.max(peak, d.update(en, 0.016));
+      const e = Math.min(0.9, 0.2 + (i / 600) * 0.7);
+      if (d.update(e, e * 0.85, 0.016)) fired = true;
     }
-    expect(peak).toBeLessThan(0.5);
+    expect(fired).toBe(false);
   });
 
-  it('respects the cooldown — only one spike per drop', () => {
+  it('re-warms after a sustained silence (treats it as a new song)', () => {
     const d = new DropDetector();
-    for (let i = 0; i < 120; i++) d.update(0.3, 0.016);
-    let spikes = 0;
-    let prev = 0;
-    for (let i = 0; i < 120; i++) {
-      const e = d.update(0.9, 0.016); // sustained high, no second jump
-      if (prev < 0.5 && e > 0.95) spikes++;
-      prev = e;
-    }
-    expect(spikes).toBe(1);
+    hold(d, 0.4, 11);
+    hold(d, 0.0, 2);           // sustained gap -> re-warm
+    build(d, 0.4, 0.6, 1);     // new song, still warming
+    expect(slamFired(d, 0.95, 0.7)).toBe(false);
   });
 
-  it('decays back to zero after firing', () => {
+  it('survives a brief pre-drop silence (does not re-warm)', () => {
     const d = new DropDetector();
-    for (let i = 0; i < 120; i++) d.update(0.3, 0.016);
-    let e = 0;
-    for (let i = 0; i < 240; i++) e = d.update(0.9, 0.016); // fire, then sustained (no new jump)
-    expect(e).toBeLessThan(0.05);
+    hold(d, 0.4, 11);
+    build(d, 0.4, 0.6, 2);
+    hold(d, 0.0, 0.5);         // brief silence right before the drop (< gapSec)
+    expect(slamFired(d, 0.95, 0.7)).toBe(true);
+  });
+
+  it('respects the cooldown — only one trigger per drop', () => {
+    const d = new DropDetector();
+    hold(d, 0.3, 11);
+    build(d, 0.3, 0.6, 2);
+    let triggers = 0;
+    for (let i = 0; i < 120; i++) if (d.update(0.95, 0.8, 0.016)) triggers++;
+    expect(triggers).toBe(1);
   });
 });

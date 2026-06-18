@@ -3,6 +3,43 @@ export const FFT_SIZE = 2048;
 /** Frequency band edges in Hz: [bass, lowMid, mid, high] upper bounds. */
 export const BAND_EDGES = { bassMax: 150, lowMidMax: 500, midMax: 2000, highMax: 8000 };
 
+/**
+ * Onset detection: half-wave-rectified spectral flux weighted toward the low end
+ * (kick/snare) — the part you feel as the beat — with an adaptive moving threshold
+ * and a refractory gap so it picks clean beats instead of broadband noise.
+ */
+export const ONSET = {
+  lowHz: 500,          // only consider flux up to here (kick + snare body)
+  threshMargin: 1.6,   // onset when flux exceeds movingAvg * this ...
+  threshFloor: 0.004,  // ... plus this floor (ignore tiny flux)
+  refractorySec: 0.11, // min seconds between onsets
+  histFrames: 43,      // moving-average window (~0.7s at 60fps)
+};
+
+/**
+ * Tempo + beat tracking. The onset strength is resampled into a fixed-rate envelope;
+ * tempo comes from autocorrelating that envelope (robust vs. inter-onset medians).
+ */
+export const TEMPO = {
+  rateHz: 100,         // fixed sample rate of the onset envelope
+  seconds: 6,          // history length for autocorrelation
+  minBpm: 70,
+  maxBpm: 180,
+  smooth: 0.04,        // smoothing of the BPM estimate
+};
+
+/**
+ * Phase-locked beat tracker (a PLL). A phase accumulator runs at the detected tempo
+ * and is nudged toward incoming onsets so predicted beats line up with the music.
+ * Lets effects fire ON the beat grid (predictively) rather than after each onset.
+ */
+export const BEAT = {
+  pllGain: 0.12,         // how hard each onset nudges the phase toward it
+  pulseDecayBeats: 0.4,  // beat pulse fades over this fraction of a beat
+  confidenceSmooth: 0.03,// smoothing of beat confidence
+  onsetMinStrength: 0.2, // ignore weak onsets for phase locking
+};
+
 /** Smoothing factors per frame (0..1, higher = snappier). */
 export const SMOOTHING = { loudness: 0.4, energy: 0.04 };
 
@@ -21,10 +58,11 @@ export const ENERGY = {
   silenceThreshold: 0.02,  // scaled RMS loudness below which we treat input as silence
   presenceRise: 0.01,      // per-frame ramp toward 1 while sound is present (gentle intro)
   presenceFall: 0.012,     // per-frame decay toward 0 during silence (core recedes)
-  energySmooth: 0.04,      // tracks the energy target smoothly (no jitter)
+  energyAttack: 0.09,      // energy rises at this rate (responds promptly to swells)
+  energyRelease: 0.03,     // and falls at this slower rate (smooth musical decay)
   fullScale: 0.3,          // scaled RMS loudness that maps to full energy
   dynamicsGamma: 1.4,      // >1 keeps moderate loudness mild so only loud sections peak
-  bandSmooth: 0.16,        // per-frame smoothing of visualized frequency bands (anti-jitter)
+  bandSmooth: 0.12,        // per-frame smoothing of visualized frequency bands (anti-jitter)
   defaultSensitivity: 1.0, // loudness gain; user-tunable to calibrate to their audio level
   minSensitivity: 0.4,
   maxSensitivity: 2.5,
@@ -56,12 +94,35 @@ export const CAPS = { blooms: 1300, shards: 360 };
  * spikes and decays, driving the screen flash / shockwave / burst.
  */
 export const DROP = {
-  fastSmooth: 0.15,   // fast energy envelope (responds in ~0.4s)
+  fastSmooth: 0.28,   // fast energy envelope (snappy, so the slam is detected with low latency)
   slowSmooth: 0.02,   // slow energy envelope (responds in ~3s)
   highThreshold: 0.55,// fast energy must exceed this to count as a drop
   riseAbove: 0.23,    // ...and lead the slow envelope by at least this (a clear sudden jump)
   cooldownSec: 2.5,   // min seconds between drops
   decayPerSec: 1.7,   // explosion envelope decay (~0.6s tail)
+  // Warmup: no drops in the first warmupSec after a song's sound begins. The slow
+  // baseline lags while energy ramps up from silence, which otherwise looks like a drop
+  // in a song's opening seconds. A sustained silence (gapSec) = a new song, re-warming.
+  quietReset: 0.05,   // energy below this counts as silence
+  gapSec: 1.2,        // sustained silence beyond this resets the warmup (new song)
+  warmupSec: 10,      // suppress drops for this long after sound starts
+  // Build-up requirement: a drop must be EARNED by a preceding build — a sustained rise
+  // in a bass-weighted intensity signal. A "build charge" accumulates while that signal
+  // leads its own slow reference, and the drop only fires on the slam's rising edge if
+  // the charge is already high (so the build came BEFORE the slam, not as part of it).
+  bassWeight: 0.6,        // build signal = 0.4*energy + 0.6*bass
+  buildSmooth: 0.12,      // smoothing of the build signal
+  buildSlopeMin: 0.04,    // per-second rise to count as "building" (a gentle ramp)
+  buildSlopeMax: 0.9,     // ...but a faster rise is a sudden jump, not a build (excluded)
+  buildChargeSec: 1.3,    // seconds of building to fully charge
+  buildDecaySec: 0.8,     // charge decays over this while falling (during sound)
+  buildRequired: 0.32,    // minimum build charge for a drop to fire (lower = drops fire more readily)
+  // Beat-snapping: a detected drop's flash is nudged onto the predicted beat grid so it
+  // lands on a beat. Fire immediately if just past a beat or the beat isn't confident;
+  // otherwise defer to the upcoming beat (but never longer than quantizeMaxWait).
+  quantizeMinConfidence: 0.4,
+  quantizeNowPhase: 0.15, // if we're within this of a beat already, fire now; else wait for the next beat
+  quantizeMaxWait: 0.6,   // ...but never defer longer than this (seconds)
 };
 
 /** Full-screen kaleidoscope mirror: faded in over this energy range. Segment count
