@@ -4,6 +4,7 @@ import { computeFeatureTimeline } from './featureTimeline';
 import { globalTempo } from './tempoGlobal';
 import { trackBeats } from './beatGrid';
 import { assembleTrack } from './assembleTrack';
+import { beatSyncFeatures } from './segmentation';
 import type { AnalyzedTrack } from './types';
 
 /**
@@ -28,6 +29,11 @@ export function analyzeTrack(
   const beats = trackBeats(tl.onset, frameRate, tempoBpm);
   onProgress?.(0.85);
 
+  // Bands are a coarser timbre proxy than the essentia path's MFCCs, but enough for boundary novelty.
+  const bandsByFrame: number[][] = [];
+  for (let f = 0; f < tl.loudness.length; f++) bandsByFrame.push([tl.bass[f], tl.lowMid[f], tl.mid[f], tl.high[f]]);
+  const beatFeatures = beatSyncFeatures(bandsByFrame, frameRate, beats);
+
   const track = assembleTrack({
     duration: channel.length / sampleRate,
     sampleRate,
@@ -40,6 +46,7 @@ export function analyzeTrack(
     high: tl.high,
     onset: tl.onset,
     beats,
+    beatFeatures,
   });
   onProgress?.(1);
   return track;
