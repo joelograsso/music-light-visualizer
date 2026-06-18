@@ -209,3 +209,19 @@ export const WAVEFORM = {
   highColor: '#3a8ee2',   // highs (hats/risers) — blue
   seekStepBars: 1,        // skip-back / skip-forward step, in bars
 };
+
+/**
+ * essentia.js analysis tuning. `rhythmMethod` is RhythmExtractor2013's method ('multifeature'
+ * = most accurate, offline). Bands come from MelBands (24 bands; FrequencyBands throws in
+ * essentia.js 0.1.3 — see docs/superpowers/notes/essentia-api.md). `melBuckets` are the
+ * spike-confirmed mel-band index ranges [start, end) mapped to our 4 buckets; band energies
+ * are dB-mapped to 0..1 so AnalyzedTrack bands stay consistent with the pure-DSP path.
+ */
+export const ESSENTIA = {
+  rhythmMethod: 'multifeature',
+  maxTempo: 208,
+  minTempo: 40,
+  melBuckets: { bass: [0, 1], lowMid: [1, 3], mid: [3, 9], high: [9, 18] } as Record<string, [number, number]>,
+  bandMinDb: -60,   // MelBands energy (dB) mapped to 0
+  bandMaxDb: -10,   // ...and to 1
+};
