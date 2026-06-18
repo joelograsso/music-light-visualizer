@@ -1,4 +1,5 @@
 import './style.css';
+import './ui/hud.css';
 import { AudioEngine } from './audio/AudioEngine';
 import { InputManager } from './audio/InputManager';
 import { Renderer } from './visual/Renderer';
@@ -9,9 +10,10 @@ import { KaleidoscopeLayer } from './visual/layers/KaleidoscopeLayer';
 import { StarfieldLayer } from './visual/layers/StarfieldLayer';
 import { LightningLayer } from './visual/layers/LightningLayer';
 import { ExplosionLayer } from './visual/layers/ExplosionLayer';
-import { Controls } from './ui/Controls';
+import { Hud } from './ui/Hud';
+import { FullscreenController } from './ui/FullscreenController';
+import { IdleHider } from './ui/IdleHider';
 import { SpotifyClient } from './spotify/SpotifyClient';
-import { NowPlaying } from './ui/NowPlaying';
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement;
 const engine = new AudioEngine();
@@ -28,24 +30,38 @@ const layers = [
   new ExplosionLayer(),        // drop payoff, on top
 ];
 
-const renderer = new Renderer(canvas, layers, () => engine.sample());
+const ui = document.getElementById('ui')!;
+const spotify = new SpotifyClient();
+const fullscreen = new FullscreenController();
+
+const hud = new Hud(ui, {
+  onSelect: (kind, file) => input.select(kind, file),
+  onSensitivity: (sensitivity) => engine.setSensitivity(sensitivity),
+  onToggleFullscreen: () => fullscreen.toggle(),
+  onLogin: () => spotify.login(),
+});
+
+fullscreen.onChange((active) => hud.controls.setFullscreen(active));
+window.addEventListener('keydown', (e) => {
+  const t = e.target as HTMLElement | null;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if (e.key === 'f' || e.key === 'F') fullscreen.toggle();
+});
+
+const renderer = new Renderer(
+  canvas, layers, () => engine.sample(),
+  (features, hue) => hud.update(features, hue),
+);
 renderer.start();
 
-const controls = new Controls(
-  (kind, file) => input.select(kind, file),
-  (sensitivity) => engine.setSensitivity(sensitivity),
-);
-document.getElementById('ui')!.appendChild(controls.el);
-
-const spotify = new SpotifyClient();
-const nowPlaying = new NowPlaying(() => spotify.login());
-document.getElementById('ui')!.appendChild(nowPlaying.el);
+const idle = new IdleHider(ui);
+idle.start();
 
 spotify.handleRedirect().then((loggedIn) => {
   if (!loggedIn) return;
   const poll = async () => {
-    try { nowPlaying.update(await spotify.nowPlaying()); }
-    catch { /* Spotify temporarily unavailable; overlay stays as-is */ }
+    try { hud.nowPlaying.update(await spotify.nowPlaying()); }
+    catch { /* Spotify temporarily unavailable; chip stays as-is */ }
   };
   poll();
   setInterval(poll, 4000);
