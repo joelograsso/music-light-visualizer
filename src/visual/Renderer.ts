@@ -1,5 +1,5 @@
 import type { AudioFeatures } from '../types';
-import { KALEIDO } from '../config';
+import { KALEIDO, SEGMENT } from '../config';
 import { StageController } from './StageController';
 import { Palette } from './Palette';
 import { SceneController } from './SceneController';
@@ -56,8 +56,9 @@ export class Renderer {
 
   private frame(dt: number): void {
     const features = this.getFeatures();
-    this.scenes.update(dt, features.drop);   // may retarget the palette on a drop
+    this.scenes.update(dt, features);   // advances on section boundaries (file) or drops (live)
     this.palette.update(dt, features.motionSpeed);
+    const sectFactor = SEGMENT.intensityFloor + (1 - SEGMENT.intensityFloor) * features.sectionIntensity;
 
     // --- render the scene into the offscreen buffer ---
     const sc = this.sctx;
@@ -76,14 +77,14 @@ export class Renderer {
     const k = gate(features.energy, KALEIDO.gate);
     const ctx = this.ctx;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = sectFactor;                     // section intensity dims the whole scene
     ctx.clearRect(0, 0, this.w, this.h);
-    ctx.drawImage(this.scene, 0, 0, this.w, this.h); // straight scene underneath
+    ctx.drawImage(this.scene, 0, 0, this.w, this.h);  // straight scene underneath
     if (k > 0.01) {
-      ctx.globalAlpha = k;                            // crossfade the mirror in
+      ctx.globalAlpha = k * sectFactor;               // crossfade the mirror in, also dimmed
       this.kaleidoscope(ctx);
-      ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = 1;                              // reset before the glow/overlay below
 
     // Pre-drop build-up: a swelling radial glow during the bars before a known drop
     // (analyzed files only; `anticipation` is 0 on the live path).
