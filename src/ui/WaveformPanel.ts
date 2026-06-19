@@ -1,7 +1,8 @@
 import { WAVEFORM } from '../config';
 import type { AnalyzedTrack } from '../audio/offline/types';
 import type { Transport } from '../audio/Transport';
-import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime } from './waveform';
+import type { AudioFeatures } from '../types';
+import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime, barNumber, currentSection, tierColor } from './waveform';
 import type { BandPeaks } from './waveform';
 
 const ICON = {
@@ -24,6 +25,16 @@ export class WaveformPanel {
   private playBtn: HTMLButtonElement;
   private toggleBtn: HTMLButtonElement;
   private timeEl: HTMLElement;
+  private bpmEl!: HTMLElement;
+  private bpmDot!: HTMLElement;
+  private barEl!: HTMLElement;
+  private sectionEl!: HTMLElement;
+  private sectionDot!: HTMLElement;
+  private sectionLabel!: HTMLElement;
+  private energyFill!: HTMLElement;
+  private lastBpm = -1;
+  private lastBar = -1;
+  private lastSectionIdx = -1;
   private track?: AnalyzedTrack;
   private transport?: Transport;
   private peaks?: BandPeaks;
@@ -42,6 +53,13 @@ export class WaveformPanel {
         <button class="hud-wbtn" data-a="end" title="Jump to end" aria-label="Jump to end">${ICON.end}</button>
         <span class="hud-wtime">0:00 / 0:00</span>
         <span class="hud-wspacer"></span>
+        <div class="hud-winfo">
+          <span class="hud-wbpm"><i class="hud-wbpm-dot"></i><b>0</b> BPM</span>
+          <span class="hud-wbar">Bar <b>1</b></span>
+          <span class="hud-wsection hidden"><i class="hud-wsection-dot"></i><b></b></span>
+          <span class="hud-wenergy" title="energy"><i></i></span>
+        </div>
+        <span class="hud-wspacer"></span>
         <button class="hud-wbtn" data-a="toggle" title="Toggle waveform" aria-label="Toggle waveform">${ICON.eye}</button>
       </div>
       <div class="hud-wave-canvas-wrap"></div>`;
@@ -51,6 +69,13 @@ export class WaveformPanel {
     this.playBtn = this.el.querySelector('[data-a="play"]') as HTMLButtonElement;
     this.toggleBtn = this.el.querySelector('[data-a="toggle"]') as HTMLButtonElement;
     this.timeEl = this.el.querySelector('.hud-wtime') as HTMLElement;
+    this.bpmEl = this.el.querySelector('.hud-wbpm b') as HTMLElement;
+    this.bpmDot = this.el.querySelector('.hud-wbpm-dot') as HTMLElement;
+    this.barEl = this.el.querySelector('.hud-wbar b') as HTMLElement;
+    this.sectionEl = this.el.querySelector('.hud-wsection') as HTMLElement;
+    this.sectionDot = this.el.querySelector('.hud-wsection-dot') as HTMLElement;
+    this.sectionLabel = this.el.querySelector('.hud-wsection b') as HTMLElement;
+    this.energyFill = this.el.querySelector('.hud-wenergy i') as HTMLElement;
     try { this.cctx = this.canvas.getContext('2d'); } catch { this.cctx = null; }
 
     this.el.querySelector('[data-a="back"]')!.addEventListener('click', () => this.skip(-1));
@@ -69,6 +94,7 @@ export class WaveformPanel {
     this.track = track;
     this.transport = transport;
     this.peaks = bandPeaks(track); // per-band normalization, computed once per track
+    this.lastBpm = -1; this.lastBar = -1; this.lastSectionIdx = -1;
     this.showWave = true;
     this.wrap.classList.remove('hidden');
     this.toggleBtn.innerHTML = ICON.eye;
@@ -86,12 +112,44 @@ export class WaveformPanel {
     window.removeEventListener('pointerup', this.endDrag);
   }
 
-  /** Called once per render frame. */
-  frame(): void {
+  /** Called once per render frame with the current live features. */
+  frame(features: AudioFeatures): void {
     if (this.el.classList.contains('hidden') || !this.transport || !this.track) return;
-    this.timeEl.textContent = `${formatTime(this.transport.position())} / ${formatTime(this.track.duration)}`;
+    const pos = this.transport.position();
+    this.timeEl.textContent = `${formatTime(pos)} / ${formatTime(this.track.duration)}`;
     this.playBtn.innerHTML = this.transport.isPlaying ? ICON.pause : ICON.play;
+    this.updateInfo(features, pos);
     if (this.showWave) this.draw();
+  }
+
+  /** Update the BPM/beat-pulse, bar number, section chip, and live energy meter. */
+  private updateInfo(features: AudioFeatures, pos: number): void {
+    if (!this.track) return;
+
+    const bpm = Math.round(this.track.tempoBpm);
+    if (bpm !== this.lastBpm) { this.bpmEl.textContent = String(bpm); this.lastBpm = bpm; }
+    this.bpmDot.style.opacity = (0.3 + 0.7 * features.beat).toFixed(3);
+    this.bpmDot.style.transform = `scale(${(0.8 + 0.6 * features.beat).toFixed(3)})`;
+
+    const bar = barNumber(pos, this.track.tempoBpm);
+    if (bar !== this.lastBar) { this.barEl.textContent = String(bar); this.lastBar = bar; }
+
+    const cur = currentSection(this.track.sections, pos);
+    if (cur) {
+      if (cur.index !== this.lastSectionIdx) {
+        const col = tierColor(cur.section.tier);
+        this.sectionEl.classList.remove('hidden');
+        this.sectionLabel.textContent = `§${cur.index + 1} · ${cur.section.tier}`;
+        this.sectionDot.style.background = col;
+        this.sectionEl.style.borderColor = col;
+        this.lastSectionIdx = cur.index;
+      }
+    } else if (this.lastSectionIdx !== -1) {
+      this.sectionEl.classList.add('hidden');
+      this.lastSectionIdx = -1;
+    }
+
+    this.energyFill.style.width = `${Math.round(features.energy * 100)}%`;
   }
 
   private togglePlay(): void {

@@ -136,6 +136,15 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 .hud-wbtn svg { width: 16px; height: 16px; }
 .hud-wtime { color: #aebbd6; }
 .hud-wspacer { flex: 1; }
+.hud-winfo { display: flex; align-items: center; gap: 14px; color: #aebbd6; }
+.hud-winfo b { color: #e6f0ff; font-weight: 600; }
+.hud-wbpm, .hud-wbar, .hud-wsection { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.hud-wbpm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); will-change: transform, opacity; }
+.hud-wsection { padding: 3px 8px; border: .5px solid transparent; border-radius: 8px; }
+.hud-wsection.hidden { display: none; }
+.hud-wsection-dot { width: 8px; height: 8px; border-radius: 50%; }
+.hud-wenergy { width: 54px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.hud-wenergy i { display: block; height: 100%; width: 0; background: var(--accent); }
 .hud-wave-canvas-wrap { height: 110px; }
 .hud-wave-canvas-wrap.hidden { display: none; }
 .hud-wave-canvas-wrap canvas { display: block; width: 100%; height: 100%; }

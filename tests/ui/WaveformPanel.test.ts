@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WaveformPanel } from '../../src/ui/WaveformPanel';
 import type { AnalyzedTrack } from '../../src/audio/offline/types';
+import type { AudioFeatures } from '../../src/types';
 
 function track(over: Partial<AnalyzedTrack> = {}): AnalyzedTrack {
   const z = (v: number[]) => Float32Array.from(v);
@@ -27,6 +28,9 @@ function fakeTransport() {
     get output() { return {} as any; },
   };
 }
+
+const F = (over: Partial<AudioFeatures> = {}): AudioFeatures =>
+  ({ beat: 0, energy: 0, ...over } as AudioFeatures);
 
 describe('WaveformPanel', () => {
   let root: HTMLElement;
@@ -78,7 +82,7 @@ describe('WaveformPanel', () => {
   it('frame() updates the time readout and does not throw without a 2D context', () => {
     const p = new WaveformPanel(); root.appendChild(p.el);
     p.show(track(), fakeTransport() as any);
-    expect(() => p.frame()).not.toThrow();
+    expect(() => p.frame(F())).not.toThrow();
     expect((p.el.querySelector('.hud-wtime') as HTMLElement).textContent).toBe('0:10 / 1:40');
   });
 
@@ -90,5 +94,28 @@ describe('WaveformPanel', () => {
     (p.el.querySelector('[data-a="end"]') as HTMLButtonElement).click();
     expect(tr.calls).toContainEqual(['seek', 0]);
     expect(tr.calls).toContainEqual(['seek', 99.95]); // duration 100 - 0.05
+  });
+
+  it('frame() shows BPM, bar number, and the current section', () => {
+    const p = new WaveformPanel(); root.appendChild(p.el);
+    const secs = [
+      { start: 0, end: 50, intensity: 0.2, tier: 'calm' as const },
+      { start: 50, end: 100, intensity: 0.9, tier: 'peak' as const },
+    ];
+    p.show(track({ tempoBpm: 120, sections: secs }), fakeTransport() as any); // position 10, barSec 2
+    p.frame(F({ beat: 1, energy: 0.5 }));
+    expect((p.el.querySelector('.hud-wbpm b') as HTMLElement).textContent).toBe('120');
+    expect((p.el.querySelector('.hud-wbar b') as HTMLElement).textContent).toBe('6'); // floor(10/2)+1
+    const section = p.el.querySelector('.hud-wsection') as HTMLElement;
+    expect(section.classList.contains('hidden')).toBe(false);
+    expect((section.querySelector('b') as HTMLElement).textContent).toBe('§1 · calm'); // pos 10 -> section 0
+    expect((p.el.querySelector('.hud-wenergy i') as HTMLElement).style.width).toBe('50%');
+  });
+
+  it('frame() hides the section chip when the track has no sections', () => {
+    const p = new WaveformPanel(); root.appendChild(p.el);
+    p.show(track({ sections: [] }), fakeTransport() as any);
+    p.frame(F());
+    expect((p.el.querySelector('.hud-wsection') as HTMLElement).classList.contains('hidden')).toBe(true);
   });
 });

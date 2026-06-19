@@ -46,6 +46,6 @@ export class Hud {
     const h = Math.round(((hue % 360) + 360) % 360);
     this.mount.style.setProperty('--accent', `hsl(${h}, 90%, 62%)`);
     this.controls.setMeter(meterLevels(features));
-    this.waveform.frame();
+    this.waveform.frame(features);
   }
 }
