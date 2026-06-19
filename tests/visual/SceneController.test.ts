@@ -51,10 +51,10 @@ describe('SceneController', () => {
     expect(sc.index).toBe((start + 1) % SCENES.length);
   });
 
-  it('ignores drops for rotation when sections are active', () => {
+  it('still advances on a drop when sections are active', () => {
     const sc = new SceneController(new Palette());
     const start = sc.index;
-    sc.update(SCENE_SWITCH.minSeconds + 0.1, F({ sectionActive: true, drop: 1 })); // drop, but sectioned
-    expect(sc.index).toBe(start);
+    sc.update(SCENE_SWITCH.minSeconds + 0.1, F({ sectionActive: true, drop: 1 }));
+    expect(sc.index).toBe((start + 1) % SCENES.length);
   });
 });

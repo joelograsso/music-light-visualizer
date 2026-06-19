@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/audio/offline/drops.ts": {
-    "mtime": 1781820973.899661,
-    "ast_hash": "bbe2cf9b28819da47facd78284fd48a7",
+    "mtime": 1781849190.0594943,
+    "ast_hash": "a8565c04a177b0514afb636faa025964",
     "semantic_hash": ""
   },
   "src/audio/offline/essentia.ts": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/audio/providers/AnalyzedFeatureProvider.ts": {
-    "mtime": 1781838881.6805146,
-    "ast_hash": "e76f8ed914203eb54ba749fe5e5dc480",
+    "mtime": 1781850936.1372495,
+    "ast_hash": "6c54425d0557abc1b7ef2141cc96048c",
     "semantic_hash": ""
   },
   "src/audio/providers/FeatureProvider.ts": {
@@ -205,8 +205,8 @@
     "semantic_hash": ""
   },
   "src/config.ts": {
-    "mtime": 1781848380.9692624,
-    "ast_hash": "5a08835cb3db61c8f2fc7df31e55f7df",
+    "mtime": 1781850014.3421974,
+    "ast_hash": "91da697547cc68fd6182b550726906fc",
     "semantic_hash": ""
   },
   "src/spotify/SpotifyClient.ts": {
@@ -285,8 +285,8 @@
     "semantic_hash": ""
   },
   "src/visual/SceneController.ts": {
-    "mtime": 1781838881.6816018,
-    "ast_hash": "6e4dbafea428a9573600a8215e6f63a2",
+    "mtime": 1781849170.1218364,
+    "ast_hash": "6e5719d687c8bbb1d5bc2fa8b00fbff6",
     "semantic_hash": ""
   },
   "src/visual/StageController.ts": {
@@ -405,8 +405,8 @@
     "semantic_hash": ""
   },
   "tests/audio/offline/drops.test.ts": {
-    "mtime": 1781820973.9148505,
-    "ast_hash": "1823ca9d294ebe614cc10ce59584dbf9",
+    "mtime": 1781849135.4529943,
+    "ast_hash": "30ace4d2f95431131a2d3a437f46822a",
     "semantic_hash": ""
   },
   "tests/audio/offline/featureTimeline.test.ts": {
@@ -445,8 +445,8 @@
     "semantic_hash": ""
   },
   "tests/audio/providers/AnalyzedFeatureProvider.test.ts": {
-    "mtime": 1781838881.684105,
-    "ast_hash": "026ac7385a36fa6cb235b0557c5b3db3",
+    "mtime": 1781850925.908744,
+    "ast_hash": "e3d35895f71765d3e94d9a8a929ff606",
     "semantic_hash": ""
   },
   "tests/audio/providers/LiveFeatureProvider.test.ts": {
@@ -510,8 +510,8 @@
     "semantic_hash": ""
   },
   "tests/visual/SceneController.test.ts": {
-    "mtime": 1781838881.685213,
-    "ast_hash": "f849a39b8fa055b5e60d513d83fb3218",
+    "mtime": 1781849124.4545567,
+    "ast_hash": "f3e5a9175ea83188ad23db4824efbe6b",
     "semantic_hash": ""
   },
   "tests/visual/StageController.test.ts": {
@@ -770,7 +770,7 @@
     "semantic_hash": ""
   },
   "next-env.d.ts": {
-    "mtime": 1781848347.4297788,
+    "mtime": 1781848657.5787966,
     "ast_hash": "2a74d3909800ca5467fa83b0ab4a4890",
     "semantic_hash": ""
   },

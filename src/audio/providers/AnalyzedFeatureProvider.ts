@@ -1,6 +1,6 @@
-import { ENERGY, BEAT, DROP } from '../../config';
+import { ENERGY, BEAT, DROP, SEGMENT } from '../../config';
 import type { AudioFeatures } from '../../types';
-import type { AnalyzedTrack, Drop } from '../offline/types';
+import type { AnalyzedTrack, Drop, SectionTier } from '../offline/types';
 import type { FeatureProvider } from './FeatureProvider';
 import { computeMotionSpeed } from '../tempo';
 
@@ -77,7 +77,7 @@ export class AnalyzedFeatureProvider implements FeatureProvider {
       mid: interp(this.track.mid, f),
       high: interp(this.track.high, f),
     };
-    const anticipation = interp(this.track.anticipation, f);
+    const rawAnticipation = interp(this.track.anticipation, f);
 
     const scaled = loudness * this.gain;
     const intensity = Math.pow(Math.min(1, scaled / ENERGY.fullScale), ENERGY.dynamicsGamma);
@@ -95,19 +95,27 @@ export class AnalyzedFeatureProvider implements FeatureProvider {
       beatPhase = 0;
     }
     const beatConfidence = this.track.beats.length > 1 ? 1 : 0;
-    const drop = dropAt(this.track.drops, t);
+    const rawDrop = dropAt(this.track.drops, t);
 
     let sectionActive = false, sectionBoundary = 0, sectionIntensity = 1;
+    let sectionTier: SectionTier | null = null;
     if (this.track.sections.length > 0) {
       sectionActive = true;
       const idx = this.sectionIndexAt(t);
       if (idx >= 0) {
-        sectionIntensity = this.track.sections[idx].intensity;
+        const section = this.track.sections[idx];
+        sectionIntensity = section.intensity;
+        sectionTier = section.tier;
         // Pulse on any section change — forward crossing, loop wrap, or a backward seek all advance the scene.
         if (this.lastSectionIdx !== -1 && idx !== this.lastSectionIdx) sectionBoundary = 1;
         this.lastSectionIdx = idx;
       }
     }
+    const mutedTier = sectionTier ? SEGMENT.dropMutedTiers.includes(sectionTier) : false;
+    const dropSuppressed = sectionActive && (mutedTier || sectionIntensity < SEGMENT.dropMinIntensity);
+    const peakEntryDrop = sectionBoundary > 0.5 && sectionTier === 'peak' ? 1 : 0;
+    const drop = dropSuppressed ? 0 : Math.max(rawDrop, peakEntryDrop);
+    const anticipation = dropSuppressed ? 0 : rawAnticipation;
 
     return { loudness, energy, bands, beat, motionSpeed, tempoBpm, presence, drop, beatPhase, beatConfidence, anticipation,
       sectionActive, sectionBoundary, sectionIntensity };

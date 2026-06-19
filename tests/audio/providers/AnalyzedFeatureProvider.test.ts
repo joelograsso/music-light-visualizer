@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { AnalyzedFeatureProvider } from '../../../src/audio/providers/AnalyzedFeatureProvider';
-import type { AnalyzedTrack } from '../../../src/audio/offline/types';
+import type { AnalyzedTrack, SectionTier } from '../../../src/audio/offline/types';
 
 function track(over: Partial<AnalyzedTrack> = {}): AnalyzedTrack {
   const z = (vals: number[]) => Float32Array.from(vals);
@@ -35,6 +35,102 @@ describe('AnalyzedFeatureProvider', () => {
     expect(p.sample().drop).toBe(0);     // before the drop
     t = 1.0; expect(p.sample().drop).toBeGreaterThan(0.9); // at the drop
     t = 1.0 + 5; expect(p.sample().drop).toBe(0);          // long after -> decayed
+  });
+
+  it('suppresses analyzed drops during calm sections', () => {
+    const t0 = track({
+      duration: 2,
+      drops: [
+        { time: 0.5, intensity: 1, buildStart: 0 },
+        { time: 1.2, intensity: 1, buildStart: 1 },
+      ],
+      sections: [
+        { start: 0, end: 1, intensity: 0.2, tier: 'calm' },
+        { start: 1, end: 2, intensity: 0.9, tier: 'peak' },
+      ],
+    });
+    let t = 0.5;
+    const p = new AnalyzedFeatureProvider(t0, () => t);
+    expect(p.sample().drop).toBe(0);
+    t = 1.2;
+    expect(p.sample().drop).toBeGreaterThan(0.9);
+  });
+
+  it('suppresses analyzed drops during building sections', () => {
+    const t0 = track({
+      duration: 2,
+      drops: [
+        { time: 0.5, intensity: 1, buildStart: 0 },
+        { time: 1.2, intensity: 1, buildStart: 1 },
+      ],
+      sections: [
+        { start: 0, end: 1, intensity: 0.55, tier: 'building' },
+        { start: 1, end: 2, intensity: 0.9, tier: 'peak' },
+      ],
+    });
+    let t = 0.5;
+    const p = new AnalyzedFeatureProvider(t0, () => t);
+    expect(p.sample().drop).toBe(0);
+    t = 1.2;
+    expect(p.sample().drop).toBeGreaterThan(0.9);
+  });
+
+  it('suppresses analyzed drops during intense sections', () => {
+    const t0 = track({
+      duration: 2,
+      drops: [
+        { time: 0.5, intensity: 1, buildStart: 0 },
+        { time: 1.2, intensity: 1, buildStart: 1 },
+      ],
+      sections: [
+        { start: 0, end: 1, intensity: 0.72, tier: 'intense' },
+        { start: 1, end: 2, intensity: 0.95, tier: 'peak' },
+      ],
+    });
+    let t = 0.5;
+    const p = new AnalyzedFeatureProvider(t0, () => t);
+    expect(p.sample().drop).toBe(0);
+    t = 1.2;
+    expect(p.sample().drop).toBeGreaterThan(0.9);
+  });
+
+  it('suppresses drop anticipation during muted section tiers', () => {
+    const muted: Array<[SectionTier, number]> = [
+      ['calm', 0.2],
+      ['building', 0.55],
+      ['intense', 0.72],
+    ];
+    for (const [tier, intensity] of muted) {
+      let t = 0.5;
+      const p = new AnalyzedFeatureProvider(track({
+        duration: 2,
+        anticipation: Float32Array.from([1, 1, 1]),
+        sections: [
+          { start: 0, end: 1, intensity, tier },
+          { start: 1, end: 2, intensity: 0.95, tier: 'peak' },
+        ],
+      }), () => t);
+      expect(p.sample().anticipation).toBe(0);
+      t = 1.2;
+      expect(p.sample().anticipation).toBeGreaterThan(0.9);
+    }
+  });
+
+  it('emits a drop spike when entering a peak section', () => {
+    const t0 = track({
+      duration: 2,
+      sections: [
+        { start: 0, end: 1, intensity: 0.55, tier: 'building' },
+        { start: 1, end: 2, intensity: 0.95, tier: 'peak' },
+      ],
+    });
+    let t = 0.5;
+    const p = new AnalyzedFeatureProvider(t0, () => t);
+    expect(p.sample().drop).toBe(0);
+    t = 1.0;
+    expect(p.sample().drop).toBeGreaterThan(0.9);
+    t = 1.2;
+    expect(p.sample().drop).toBe(0);
   });
 
   it('applies sensitivity to energy (loudness below full scale gives headroom)', () => {

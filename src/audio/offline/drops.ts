@@ -10,10 +10,38 @@ function snapToDownbeat(downbeats: Float32Array, t: number, maxSec: number): num
   return best;
 }
 
+function medianInterval(times: Float32Array): number {
+  if (times.length < 2) return 0;
+  const gaps: number[] = [];
+  for (let i = 1; i < times.length; i++) {
+    const gap = times[i] - times[i - 1];
+    if (gap > 0) gaps.push(gap);
+  }
+  if (gaps.length === 0) return 0;
+  gaps.sort((a, b) => a - b);
+  return gaps[gaps.length >> 1];
+}
+
+function maxRise(ch: Float32Array, start: number, end: number): number {
+  const s = Math.max(0, start);
+  const e = Math.min(ch.length, end);
+  if (e <= s) return 0;
+  let minSoFar = ch[s];
+  let best = 0;
+  for (let i = s + 1; i < e; i++) {
+    const v = ch[i];
+    const rise = v - minSoFar;
+    if (rise > best) best = rise;
+    if (v < minSoFar) minSoFar = v;
+  }
+  return best;
+}
+
 /**
  * Non-causal drop detection: scan an internal energy curve (unit sensitivity) plus the
  * bass channel for a sustained build followed by a sudden slam, snap each slam to the
- * nearest downbeat, and precompute an anticipation ramp rising into each drop.
+ * nearest downbeat, and precompute an anticipation ramp rising into each drop. The build
+ * check looks back at least one inferred bar so brief pre-drop cuts do not erase the rise.
  */
 export function findDrops(
   energy: Float32Array,
@@ -30,7 +58,9 @@ export function findDrops(
   for (let i = 0; i < n; i++) build[i] = (1 - DROP.bassWeight) * energy[i] + DROP.bassWeight * bass[i];
 
   const slamWin = Math.max(1, Math.round(OFFLINE.drops.slamSec * frameRate));
-  const buildWin = Math.max(1, Math.round(OFFLINE.drops.buildLookbackSec * frameRate));
+  const barSec = medianInterval(downbeats);
+  const buildLookbackSec = Math.max(OFFLINE.drops.buildLookbackSec, OFFLINE.drops.anticipationLeadSec, barSec);
+  const buildWin = Math.max(1, Math.round(buildLookbackSec * frameRate));
   const cooldownFrames = Math.round(DROP.cooldownSec * frameRate);
   let lastFrame = -Infinity;
 
@@ -40,7 +70,7 @@ export function findDrops(
     if (energy[i] - energy[i - slamWin] < OFFLINE.drops.slamJump) continue; // sudden jump
     const preEnd = i - slamWin;
     const preStart = Math.max(0, preEnd - buildWin);
-    if (build[preEnd] - build[preStart] < OFFLINE.drops.buildRise) continue; // earned by a build
+    if (maxRise(build, preStart, preEnd) < OFFLINE.drops.buildRise) continue; // earned by a build
 
     let time = i / frameRate;
     time = snapToDownbeat(downbeats, time, OFFLINE.drops.snapMaxSec);

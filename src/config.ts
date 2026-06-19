@@ -174,6 +174,8 @@ export const SEGMENT = {
   minSectionBars: 4,     // minimum section length (bars) when picking boundary peaks
   peakThreshold: 1.5,    // a novelty peak must exceed the mean novelty * this
   intensityFloor: 0.6,   // section intensity never drops below this multiplier (1.0 = effect disabled)
+  dropMinIntensity: 0.33,// suppress analyzed drop effects in low-intensity sections
+  dropMutedTiers: ['calm', 'building', 'intense'] as SectionTier[],
 };
 
 /** Spotify — fill in your registered app's values. */

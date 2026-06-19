@@ -25,8 +25,8 @@ export class SceneController {
     this.timeIn += dt;
     const dropEdge = this.prevDrop < 0.5 && features.drop > 0.9;
     this.prevDrop = features.drop;
-    // When the track has real sections, advance on section boundaries; otherwise on drops.
-    const trigger = features.sectionActive ? features.sectionBoundary > 0.5 : dropEdge;
+    // Sections drive longer-form rotation, but a true drop should still land immediately.
+    const trigger = dropEdge || (features.sectionActive && features.sectionBoundary > 0.5);
     if ((trigger && this.timeIn >= SCENE_SWITCH.minSeconds) || this.timeIn >= SCENE_SWITCH.maxSeconds) {
       this.advance();
     }

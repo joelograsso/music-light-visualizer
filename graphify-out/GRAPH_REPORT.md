@@ -1,16 +1,16 @@
-# Graph Report - music-light-visualizer  (2026-06-18)
+# Graph Report - music-light-visualizer  (2026-06-19)
 
 ## Corpus Check
-- 161 files · ~102,846 words
+- 161 files · ~103,490 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 961 nodes · 1489 edges · 72 communities (54 shown, 18 thin omitted)
+- 963 nodes · 1496 edges · 71 communities (52 shown, 19 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7a9831dc`
+- Built from commit: `255dfd36`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -75,8 +75,6 @@
 - [[_COMMUNITY_Community 61|Community 61]]
 - [[_COMMUNITY_Community 62|Community 62]]
 - [[_COMMUNITY_Community 63|Community 63]]
-- [[_COMMUNITY_Community 64|Community 64]]
-- [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
 - [[_COMMUNITY_Community 68|Community 68]]
@@ -95,49 +93,49 @@
 10. `Music Light Visualizer — Design Spec` - 14 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `sampleBands()` --calls--> `clamp01()`  [INFERRED]
+  src/ui/waveform.ts → src/ui/meter.ts
+- `waveformColumn` --calls--> `clamp01()`  [INFERRED]
+  src/ui/waveform.ts → src/ui/meter.ts
+- `FeatureExtractor` --references--> `FrequencyBands`  [EXTRACTED]
+  src/audio/FeatureExtractor.ts → src/types.ts
 - `LiveFeatureProvider` --references--> `FeatureExtractor`  [EXTRACTED]
   src/audio/providers/LiveFeatureProvider.ts → src/audio/FeatureExtractor.ts
 - `HudCallbacks` --references--> `SourceKind`  [EXTRACTED]
   src/ui/Hud.ts → src/audio/InputManager.ts
-- `AnalyzedFileSource` --references--> `Transport`  [EXTRACTED]
-  src/audio/sources/AnalyzedFileSource.ts → src/audio/Transport.ts
-- `WaveformPanel` --references--> `Transport`  [EXTRACTED]
-  src/ui/WaveformPanel.ts → src/audio/Transport.ts
-- `analyzeTrack()` --calls--> `computeFeatureTimeline()`  [EXTRACTED]
-  src/audio/offline/analyzeTrack.ts → src/audio/offline/featureTimeline.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (72 total, 18 thin omitted)
+## Communities (71 total, 19 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.21
-Nodes (11): binFor(), computeFeatureTimeline(), FeatureTimeline, levelOf(), fftInPlace(), magnitudeSpectrum(), computeStft(), frameCount() (+3 more)
+Cohesion: 0.23
+Nodes (9): DropDetector, BAND_EDGES, CORE, DROP, ENERGY, SMOOTHING, TIER_COLORS, FrequencyBands (+1 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.05
-Nodes (26): AudioEngine, SILENT, InputManager, SourceKind, mixToMono(), AnalyzedFeatureProvider, beatAt(), dropAt() (+18 more)
+Cohesion: 0.08
+Nodes (15): AudioEngine, SILENT, InputManager, mixToMono(), FeatureProvider, LiveFeatureProvider, AnalyzedFileSource, ProgressFn (+7 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.07
-Nodes (28): analyzeTrack(), analyzeWithFallback(), EssentiaFn, ProgressCb, PureFn, assembleTrack(), RawTrack, trackBeats() (+20 more)
+Cohesion: 0.06
+Nodes (34): analyzeTrack(), assembleTrack(), RawTrack, trackBeats(), findDownbeats(), findDrops(), maxRise(), medianInterval() (+26 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.06
-Nodes (35): Section, WAVEFORM, clamp01(), bandPeaks, Bands3, barNumber(), barSeconds(), currentSection() (+27 more)
+Nodes (39): analyzeWithFallback(), EssentiaFn, ProgressCb, PureFn, AnalyzedTrack, Section, WAVEFORM, bandPeaks (+31 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.05
-Nodes (27): BeatTracker, DropDetector, bandAvg(), binForFreq(), computeBands(), FeatureExtractor, OnsetDetector, OnsetResult (+19 more)
+Cohesion: 0.15
+Nodes (8): bandAvg(), binForFreq(), computeBands(), FeatureExtractor, OnsetDetector, OnsetResult, silent, ONSET
 
 ### Community 5 - "Community 5"
-Cohesion: 0.20
-Nodes (5): SCENE_SWITCH, SCENES, Palette, SceneController, F()
+Cohesion: 0.06
+Nodes (20): SourceKind, GATES, KALEIDO, SCENE_SWITCH, SCENES, AudioFeatures, LayerGates, Controls (+12 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.18
-Nodes (6): GATES, LayerGates, gate(), Renderer, gate(), StageController
+Cohesion: 0.23
+Nodes (7): clamp(), computeMotionSpeed(), SectionTier, AnalyzedFeatureProvider, beatAt(), dropAt(), interp()
 
 ### Community 7 - "Community 7"
 Cohesion: 0.06
@@ -276,28 +274,16 @@ Cohesion: 0.50
 Nodes (3): For --cluster-only, For --update (incremental re-extraction), graphify reference: incremental update and cluster-only
 
 ### Community 57 - "Community 57"
-Cohesion: 0.22
-Nodes (9): ExplosionLayer, jaggedLine(), lerp(), polyArea(), Pt, rayToRect(), Shard, Shockwave (+1 more)
-
-### Community 59 - "Community 59"
-Cohesion: 0.20
-Nodes (3): Particle, ParticleSystem, SpawnOpts
+Cohesion: 0.29
+Nodes (5): autocorrelate(), estimateTempo(), TempoResult, globalTempo(), TEMPO
 
 ### Community 61 - "Community 61"
 Cohesion: 0.16
 Nodes (8): NowPlaying, parseNowPlaying(), randomString(), sha256(), SpotifyClient, SPOTIFY, esc(), NowPlaying
 
 ### Community 62 - "Community 62"
-Cohesion: 0.14
-Nodes (11): BloomLayer, ShardRequest, CoreLayer, KaleidoscopeLayer, Shard, RibbonLayer, Star, StarfieldLayer (+3 more)
-
-### Community 63 - "Community 63"
-Cohesion: 0.29
-Nodes (4): Bolt, LightningLayer, Pt, coreRadius()
-
-### Community 65 - "Community 65"
-Cohesion: 0.38
-Nodes (3): mountVisualizer(), VisualizerCleanup, VisualizerApp()
+Cohesion: 0.05
+Nodes (32): BloomLayer, ShardRequest, CoreLayer, ExplosionLayer, jaggedLine(), lerp(), polyArea(), Pt (+24 more)
 
 ### Community 66 - "Community 66"
 Cohesion: 0.29
@@ -306,22 +292,22 @@ Nodes (6): Next.js Conversion Implementation Plan, Task 1: Define The Migration 
 ## Knowledge Gaps
 - **399 isolated node(s):** `metadata`, `nextConfig`, `name`, `private`, `version` (+394 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **18 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **19 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AudioFeatures` connect `Community 1` to `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 62`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
-- **Why does `Transport` connect `Community 8` to `Community 1`, `Community 3`?**
+- **Why does `AudioFeatures` connect `Community 5` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 6`, `Community 62`?**
+  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+- **Why does `Transport` connect `Community 8` to `Community 1`, `Community 3`, `Community 5`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
-- **Why does `AnalyzedTrack` connect `Community 2` to `Community 1`, `Community 3`?**
+- **Why does `AnalyzedTrack` connect `Community 3` to `Community 1`, `Community 2`, `Community 5`, `Community 6`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **What connects `metadata`, `nextConfig`, `name` to the rest of the system?**
   _399 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.051131354687040845 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0784313725490196 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
-  _Cohesion score 0.07320024198427103 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06394230769230769 - nodes in this community are weakly interconnected._
 - **Should `Community 3` be split into smaller, more focused modules?**
-  _Cohesion score 0.06321334503950835 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05741626794258373 - nodes in this community are weakly interconnected._
