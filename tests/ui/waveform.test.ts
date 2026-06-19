@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { bandPeaks, sampleBands, barSeconds, waveformWindow, pointerTime, formatTime } from '../../src/ui/waveform';
+import { bandPeaks, sampleBands, barSeconds, waveformWindow, pointerTime, formatTime, barNumber, currentSection, tierColor } from '../../src/ui/waveform';
 import { analyzeTrack } from '../../src/audio/offline/analyzeTrack';
-import type { AnalyzedTrack } from '../../src/audio/offline/types';
+import type { AnalyzedTrack, Section } from '../../src/audio/offline/types';
 
 // A signal with KNOWN per-band content at distinct times: kick (55Hz/bass) + stab
 // (1200Hz/mid) on every beat, hi-hat (6000Hz/high) on every off-beat.
@@ -99,5 +99,41 @@ describe('formatTime', () => {
     expect(formatTime(72)).toBe('1:12');
     expect(formatTime(5)).toBe('0:05');
     expect(formatTime(0)).toBe('0:00');
+  });
+});
+
+describe('barNumber', () => {
+  it('is 1 at the start and increments per bar', () => {
+    expect(barNumber(0, 120)).toBe(1);   // barSeconds 2
+    expect(barNumber(1.9, 120)).toBe(1);
+    expect(barNumber(2, 120)).toBe(2);
+    expect(barNumber(7, 120)).toBe(4);
+  });
+  it('is 1 when tempo is unknown', () => {
+    expect(barNumber(50, 0)).toBe(1);
+  });
+});
+
+describe('currentSection', () => {
+  const secs: Section[] = [
+    { start: 0, end: 10, intensity: 0.2, tier: 'calm' },
+    { start: 10, end: 20, intensity: 0.9, tier: 'peak' },
+  ];
+  it('finds the section containing t', () => {
+    expect(currentSection(secs, 5)?.index).toBe(0);
+    expect(currentSection(secs, 15)?.index).toBe(1);
+  });
+  it('clamps to the last section past its end', () => {
+    expect(currentSection(secs, 25)?.index).toBe(1);
+  });
+  it('returns null with no sections', () => {
+    expect(currentSection([], 5)).toBe(null);
+  });
+});
+
+describe('tierColor', () => {
+  it('maps each tier to its configured color', () => {
+    expect(tierColor('calm')).toBe('#3a8ee2');
+    expect(tierColor('peak')).toBe('#e2563b');
   });
 });

@@ -1,3 +1,5 @@
+import type { SectionTier } from './audio/offline/types';
+
 export const FFT_SIZE = 2048;
 
 /** Frequency band edges in Hz: [bass, lowMid, mid, high] upper bounds. */
@@ -220,6 +222,14 @@ export const WAVEFORM = {
   midColor: '#46c93a',    // mids (vocals/synths) — green
   highColor: '#3a8ee2',   // highs (hats/risers) — blue
   seekStepBars: 1,        // skip-back / skip-forward step, in bars
+};
+
+/** Section-tier colors for the transport info chip (cool -> hot energy ramp). */
+export const TIER_COLORS: Record<SectionTier, string> = {
+  calm: '#3a8ee2',     // blue
+  building: '#46c93a', // green
+  intense: '#e2a83b',  // amber
+  peak: '#e2563b',     // red
 };
 
 /**
