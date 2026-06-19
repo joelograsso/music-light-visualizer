@@ -1,5 +1,5 @@
-import { WAVEFORM } from '../config';
-import type { AnalyzedTrack } from '../audio/offline/types';
+import { WAVEFORM, TIER_COLORS } from '../config';
+import type { AnalyzedTrack, Section, SectionTier } from '../audio/offline/types';
 
 /** Per-band normalization peaks; `low` = bass, `mid` = lowMid+mid, `high` = high. */
 export interface BandPeaks { low: number; mid: number; high: number; }
@@ -79,4 +79,29 @@ export function formatTime(sec: number): string {
   const m = Math.floor(s / 60);
   const r = s % 60;
   return `${m}:${r < 10 ? '0' : ''}${r}`;
+}
+
+/** 1-based bar number at playhead position `pos`; 1 when tempo is unknown. */
+export function barNumber(pos: number, tempoBpm: number): number {
+  const bs = barSeconds(tempoBpm);
+  if (bs <= 0) return 1;
+  return Math.floor(Math.max(0, pos) / bs) + 1;
+}
+
+/** The section containing time `t` (clamped to the last section once past its end), or null
+ *  if `t` is before the first section or `sections` is empty. */
+export function currentSection(sections: Section[], t: number): { index: number; section: Section } | null {
+  for (let i = 0; i < sections.length; i++) {
+    if (t >= sections[i].start && t < sections[i].end) return { index: i, section: sections[i] };
+  }
+  if (sections.length > 0 && t >= sections[sections.length - 1].end) {
+    const i = sections.length - 1;
+    return { index: i, section: sections[i] };
+  }
+  return null;
+}
+
+/** The display color for a section tier. */
+export function tierColor(tier: SectionTier): string {
+  return TIER_COLORS[tier];
 }

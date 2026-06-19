@@ -1,27 +1,34 @@
 import { WAVEFORM } from '../config';
 import type { AnalyzedTrack } from '../audio/offline/types';
 import type { Transport } from '../audio/Transport';
-import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime } from './waveform';
+import type { AudioFeatures } from '../types';
+import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime, barNumber, currentSection, tierColor } from './waveform';
 import type { BandPeaks } from './waveform';
-
-const ICON = {
-  back: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3v10H3.5V3z"/><path d="M13 3l-7 5 7 5z"/></svg>',
-  fwd: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3l7 5-7 5z"/><path d="M11 3v10h1.5V3z"/></svg>',
-  play: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3l8 5-8 5z"/></svg>',
-  pause: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/></svg>',
-  eye: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8z"/><circle cx="8" cy="8" r="2"/></svg>',
-  eyeoff: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8s2.5-4.5 7-4.5c1 0 1.9.2 2.7.5M15 8s-2.5 4.5-7 4.5c-1 0-1.9-.2-2.7-.5"/><path d="M2 2l12 12"/></svg>',
-};
+import { setButtonIcon, WaveformBandLegend, WaveformCanvasPane, WaveformTransportRow } from './WaveformPanelComponents';
 
 /** Bottom panel (file-only): transport controls + a scrolling band-colored waveform. */
 export class WaveformPanel {
   readonly el = document.createElement('div');
-  private canvas = document.createElement('canvas');
+  private row = new WaveformTransportRow();
+  private legend = new WaveformBandLegend();
+  private canvasPane = new WaveformCanvasPane();
+  private canvas = this.canvasPane.canvas;
   private cctx: CanvasRenderingContext2D | null = null;
-  private wrap: HTMLElement;
-  private playBtn: HTMLButtonElement;
-  private toggleBtn: HTMLButtonElement;
-  private timeEl: HTMLElement;
+  private wrap = this.canvasPane.el;
+  private playBtn = this.row.controls.playBtn;
+  private toggleBtn = this.row.toggleBtn;
+  private timeEl = this.row.info.timeEl;
+  private bpmEl = this.row.info.bpmEl;
+  private bpmDot = this.row.info.bpmDot;
+  private barEl = this.row.info.barEl;
+  private sectionEl = this.row.info.sectionEl;
+  private sectionDot = this.row.info.sectionDot;
+  private sectionLabel = this.row.info.sectionLabel;
+  private energyFill = this.row.info.energyFill;
+  private legendEl = this.legend.el;
+  private lastBpm = -1;
+  private lastBar = -1;
+  private lastSectionIdx = -1;
   private track?: AnalyzedTrack;
   private transport?: Transport;
   private peaks?: BandPeaks;
@@ -31,26 +38,13 @@ export class WaveformPanel {
 
   constructor() {
     this.el.className = 'hud-wave hidden';
-    this.el.innerHTML = `
-      <div class="hud-wave-row">
-        <button class="hud-wbtn" data-a="back" title="Back one bar" aria-label="Seek back one bar">${ICON.back}</button>
-        <button class="hud-wbtn main" data-a="play" title="Play / pause" aria-label="Play or pause">${ICON.play}</button>
-        <button class="hud-wbtn" data-a="fwd" title="Forward one bar" aria-label="Seek forward one bar">${ICON.fwd}</button>
-        <span class="hud-wtime">0:00 / 0:00</span>
-        <span class="hud-wspacer"></span>
-        <button class="hud-wbtn" data-a="toggle" title="Toggle waveform" aria-label="Toggle waveform">${ICON.eye}</button>
-      </div>
-      <div class="hud-wave-canvas-wrap"></div>`;
-
-    this.wrap = this.el.querySelector('.hud-wave-canvas-wrap') as HTMLElement;
-    this.wrap.appendChild(this.canvas);
-    this.playBtn = this.el.querySelector('[data-a="play"]') as HTMLButtonElement;
-    this.toggleBtn = this.el.querySelector('[data-a="toggle"]') as HTMLButtonElement;
-    this.timeEl = this.el.querySelector('.hud-wtime') as HTMLElement;
+    this.el.append(this.row.el, this.legend.el, this.canvasPane.el);
     try { this.cctx = this.canvas.getContext('2d'); } catch { this.cctx = null; }
 
-    this.el.querySelector('[data-a="back"]')!.addEventListener('click', () => this.skip(-1));
-    this.el.querySelector('[data-a="fwd"]')!.addEventListener('click', () => this.skip(1));
+    this.row.controls.backBtn.addEventListener('click', () => this.skip(-1));
+    this.row.controls.fwdBtn.addEventListener('click', () => this.skip(1));
+    this.row.controls.startBtn.addEventListener('click', () => this.seekToStart());
+    this.row.controls.endBtn.addEventListener('click', () => this.seekToEnd());
     this.playBtn.addEventListener('click', () => this.togglePlay());
     this.toggleBtn.addEventListener('click', () => this.toggleWave());
 
@@ -63,9 +57,10 @@ export class WaveformPanel {
     this.track = track;
     this.transport = transport;
     this.peaks = bandPeaks(track); // per-band normalization, computed once per track
+    this.lastBpm = -1; this.lastBar = -1; this.lastSectionIdx = -1;
     this.showWave = true;
     this.wrap.classList.remove('hidden');
-    this.toggleBtn.innerHTML = ICON.eye;
+    setButtonIcon(this.toggleBtn, 'eye');
     this.el.classList.remove('hidden');
   }
 
@@ -80,25 +75,58 @@ export class WaveformPanel {
     window.removeEventListener('pointerup', this.endDrag);
   }
 
-  /** Called once per render frame. */
-  frame(): void {
+  /** Called once per render frame with the current live features. */
+  frame(features: AudioFeatures): void {
     if (this.el.classList.contains('hidden') || !this.transport || !this.track) return;
-    this.timeEl.textContent = `${formatTime(this.transport.position())} / ${formatTime(this.track.duration)}`;
-    this.playBtn.innerHTML = this.transport.isPlaying ? ICON.pause : ICON.play;
+    const pos = this.transport.position();
+    this.timeEl.textContent = `${formatTime(pos)} / ${formatTime(this.track.duration)}`;
+    setButtonIcon(this.playBtn, this.transport.isPlaying ? 'pause' : 'play');
+    this.updateInfo(features, pos);
     if (this.showWave) this.draw();
+  }
+
+  /** Update the BPM/beat-pulse, bar number, section chip, and live energy meter. */
+  private updateInfo(features: AudioFeatures, pos: number): void {
+    if (!this.track) return;
+
+    const bpm = Math.round(this.track.tempoBpm);
+    if (bpm !== this.lastBpm) { this.bpmEl.textContent = String(bpm); this.lastBpm = bpm; }
+    this.bpmDot.style.opacity = (0.3 + 0.7 * features.beat).toFixed(3);
+    this.bpmDot.style.transform = `scale(${(0.8 + 0.6 * features.beat).toFixed(3)})`;
+
+    const bar = barNumber(pos, this.track.tempoBpm);
+    if (bar !== this.lastBar) { this.barEl.textContent = String(bar); this.lastBar = bar; }
+
+    const cur = currentSection(this.track.sections, pos);
+    if (cur) {
+      if (cur.index !== this.lastSectionIdx) {
+        const col = tierColor(cur.section.tier);
+        this.sectionEl.classList.remove('hidden');
+        this.sectionLabel.textContent = `§${cur.index + 1} · ${cur.section.tier}`;
+        this.sectionDot.style.background = col;
+        this.sectionEl.style.borderColor = col;
+        this.lastSectionIdx = cur.index;
+      }
+    } else if (this.lastSectionIdx !== -1) {
+      this.sectionEl.classList.add('hidden');
+      this.lastSectionIdx = -1;
+    }
+
+    this.energyFill.style.width = `${Math.round(features.energy * 100)}%`;
   }
 
   private togglePlay(): void {
     if (!this.transport) return;
     if (this.transport.isPlaying) this.transport.pause();
     else this.transport.play();
-    this.playBtn.innerHTML = this.transport.isPlaying ? ICON.pause : ICON.play;
+    setButtonIcon(this.playBtn, this.transport.isPlaying ? 'pause' : 'play');
   }
 
   private toggleWave(): void {
     this.showWave = !this.showWave;
     this.wrap.classList.toggle('hidden', !this.showWave);
-    this.toggleBtn.innerHTML = this.showWave ? ICON.eye : ICON.eyeoff;
+    this.legendEl.classList.toggle('hidden', !this.showWave);
+    setButtonIcon(this.toggleBtn, this.showWave ? 'eye' : 'eyeoff');
   }
 
   private step(): number {
@@ -110,6 +138,15 @@ export class WaveformPanel {
   private skip(dir: number): void {
     if (!this.transport) return;
     this.transport.seek(this.transport.position() + dir * this.step());
+  }
+
+  private seekToStart(): void {
+    if (!this.transport) return;
+    this.transport.seek(0);
+  }
+
+  private seekToEnd(): void {
+    if (this.transport && this.track) this.transport.seek(Math.max(0, this.track.duration - 0.05));
   }
 
   private seekTo(e: PointerEvent): void {

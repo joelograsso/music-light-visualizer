@@ -3,8 +3,10 @@ import { PlayClock } from './PlayClock';
 /**
  * Pausable / seekable playback of a decoded AudioBuffer. An AudioBufferSourceNode is
  * one-shot, so pause = stop + remember offset, and play/seek = start a fresh node from the
- * offset. `position()` is the single source of truth for "where we are": the loop-wrapped,
- * output-latency-adjusted AUDIBLE position, read by the visuals, playhead, and waveform.
+ * offset. The track plays once (no looping): when the buffer finishes it parks at the end,
+ * and pressing play from there restarts from the top. `position()` is the single source of
+ * truth for "where we are": the clamped, output-latency-adjusted AUDIBLE position, read by
+ * the visuals, playhead, and waveform.
  */
 export class Transport {
   private clock: PlayClock;
@@ -12,7 +14,7 @@ export class Transport {
   private out: GainNode;
 
   constructor(private ctx: AudioContext, private buffer: AudioBuffer) {
-    this.clock = new PlayClock(buffer.duration, true);
+    this.clock = new PlayClock(buffer.duration, false); // play once; no looping
     this.out = ctx.createGain();
     this.out.connect(ctx.destination);
   }
@@ -27,11 +29,15 @@ export class Transport {
     const d = this.buffer.duration;
     if (d <= 0) return 0;
     const p = this.clock.position(this.ctx.currentTime) - lat;
-    return ((p % d) + d) % d;
+    return Math.max(0, Math.min(d, p)); // clamp into [0, duration] — no wrap
   }
 
   play(): void {
     if (this.clock.isPlaying) return;
+    // Parked at the end? Restart from the top.
+    if (this.clock.position(this.ctx.currentTime) >= this.buffer.duration - 0.01) {
+      this.clock.seek(0, this.ctx.currentTime);
+    }
     this.clock.play(this.ctx.currentTime);
     this.startNode(this.clock.position(this.ctx.currentTime));
   }
@@ -55,16 +61,27 @@ export class Transport {
   private startNode(offset: number): void {
     const node = this.ctx.createBufferSource();
     node.buffer = this.buffer;
-    node.loop = true;
+    node.loop = false;
     node.connect(this.out);
-    node.start(0, offset % this.buffer.duration);
+    // Fires when the buffer ends naturally; our own stop() clears this.node first so a
+    // stop-triggered 'ended' (pause/seek) is ignored — only a real end-of-track parks.
+    node.onended = () => { if (node === this.node) this.handleEnded(); };
+    node.start(0, Math.min(offset, this.buffer.duration));
     this.node = node;
   }
 
   private stopNode(): void {
     if (!this.node) return;
-    try { this.node.stop(); } catch { /* already stopped */ }
-    this.node.disconnect();
+    const n = this.node;
+    this.node = undefined; // clear first so the 'ended' from our own stop() is a no-op
+    try { n.stop(); } catch { /* already stopped */ }
+    n.disconnect();
+  }
+
+  /** The buffer reached its end on its own (loop is off): pause, parked at the end. */
+  private handleEnded(): void {
     this.node = undefined;
+    this.clock.pause(this.ctx.currentTime);
+    this.clock.seek(this.buffer.duration, this.ctx.currentTime); // park at end (clamped)
   }
 }

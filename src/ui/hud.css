@@ -2,6 +2,10 @@
 #ui { --accent: hsl(205, 90%, 62%); transition: opacity .35s ease; }
 #ui.ui-hidden { opacity: 0; }
 #ui.ui-hidden > * { pointer-events: none; }
+/* Keep the file transport bar clickable even while the HUD is idle-faded, so the first
+   click on play/pause always lands (otherwise it falls through to the #stage canvas). */
+#ui.ui-hidden > .hud-wave,
+#ui.ui-hidden > .hud-wave * { pointer-events: auto; }
 
 .hud-dock {
   position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
@@ -119,9 +123,12 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
   border-top: .5px solid color-mix(in srgb, var(--accent) 55%, transparent);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   font: 12px ui-monospace, monospace; color: #e6f0ff;
+  z-index: 20;
+  pointer-events: none;
 }
 .hud-wave.hidden { display: none; }
-.hud-wave-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; }
+.hud-wave-row { display: flex; align-items: center; gap: 10px; padding: 6px 12px; pointer-events: auto; }
+.hud-wcontrols { display: flex; align-items: center; gap: 10px; }
 .hud-wbtn {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; padding: 0; border-radius: 50%;
@@ -133,7 +140,21 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 .hud-wbtn svg { width: 16px; height: 16px; }
 .hud-wtime { color: #aebbd6; }
 .hud-wspacer { flex: 1; }
-.hud-wave-canvas-wrap { height: 110px; }
+.hud-winfo { display: flex; align-items: center; gap: 14px; color: #aebbd6; }
+.hud-winfo b { color: #e6f0ff; font-weight: 600; }
+.hud-wbpm, .hud-wbar, .hud-wsection { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.hud-wbpm-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); will-change: transform, opacity; }
+.hud-wsection { padding: 3px 8px; border: .5px solid transparent; border-radius: 8px; }
+.hud-wsection.hidden { display: none; }
+.hud-wsection-dot { width: 8px; height: 8px; border-radius: 50%; }
+.hud-wenergy { width: 54px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.hud-wenergy i { display: block; height: 100%; width: 0; background: var(--accent); }
+.hud-wlegend { display: flex; align-items: center; gap: 12px; padding: 0 12px 6px; font-size: 11px; color: #8b94a4; }
+.hud-wlegend.hidden { display: none; }
+.hud-wleg-label { color: #6b7280; }
+.hud-wleg { display: inline-flex; align-items: center; gap: 5px; }
+.hud-wleg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.hud-wave-canvas-wrap { height: 110px; pointer-events: auto; }
 .hud-wave-canvas-wrap.hidden { display: none; }
 .hud-wave-canvas-wrap canvas { display: block; width: 100%; height: 100%; }
 /* lift the dock above the waveform panel while it's visible */
