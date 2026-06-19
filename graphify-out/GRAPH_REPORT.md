@@ -1,16 +1,16 @@
 # Graph Report - music-light-visualizer  (2026-06-18)
 
 ## Corpus Check
-- 155 files · ~100,558 words
+- 155 files · ~101,827 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 925 nodes · 1427 edges · 73 communities (56 shown, 17 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 3 edges (avg confidence: 0.8)
+- 937 nodes · 1467 edges · 68 communities (51 shown, 17 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 4 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e986dc0f`
+- Built from commit: `53a5f4a0`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -77,11 +77,6 @@
 - [[_COMMUNITY_Community 65|Community 65]]
 - [[_COMMUNITY_Community 66|Community 66]]
 - [[_COMMUNITY_Community 67|Community 67]]
-- [[_COMMUNITY_Community 68|Community 68]]
-- [[_COMMUNITY_Community 69|Community 69]]
-- [[_COMMUNITY_Community 70|Community 70]]
-- [[_COMMUNITY_Community 71|Community 71]]
-- [[_COMMUNITY_Community 72|Community 72]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `RenderEnv` - 26 edges
@@ -98,27 +93,27 @@
 ## Surprising Connections (you probably didn't know these)
 - `sampleBands()` --calls--> `clamp01()`  [INFERRED]
   src/ui/waveform.ts → src/ui/meter.ts
-- `FeatureExtractor` --references--> `OnsetDetector`  [EXTRACTED]
-  src/audio/FeatureExtractor.ts → src/audio/OnsetDetector.ts
+- `waveformColumn` --calls--> `clamp01()`  [INFERRED]
+  src/ui/waveform.ts → src/ui/meter.ts
+- `AudioEngine` --references--> `FeatureProvider`  [EXTRACTED]
+  src/audio/AudioEngine.ts → src/audio/providers/FeatureProvider.ts
+- `AudioEngine` --references--> `AudioSource`  [EXTRACTED]
+  src/audio/AudioEngine.ts → src/audio/sources/AudioSource.ts
 - `LiveFeatureProvider` --references--> `FeatureExtractor`  [EXTRACTED]
   src/audio/providers/LiveFeatureProvider.ts → src/audio/FeatureExtractor.ts
-- `HudCallbacks` --references--> `SourceKind`  [EXTRACTED]
-  src/ui/Hud.ts → src/audio/InputManager.ts
-- `AnalyzedFileSource` --references--> `Transport`  [EXTRACTED]
-  src/audio/sources/AnalyzedFileSource.ts → src/audio/Transport.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (73 total, 17 thin omitted)
+## Communities (68 total, 17 thin omitted)
 
 ### Community 0 - "Community 0"
-Cohesion: 0.20
-Nodes (6): CoreLayer, Bolt, LightningLayer, Pt, coreRadius(), RenderEnv
+Cohesion: 0.22
+Nodes (5): AudioFeatures, Hud, noopCallbacks, clamp01(), meterLevels()
 
 ### Community 1 - "Community 1"
-Cohesion: 0.07
-Nodes (15): AudioEngine, SILENT, InputManager, mixToMono(), FeatureProvider, LiveFeatureProvider, AnalyzedFileSource, ProgressFn (+7 more)
+Cohesion: 0.16
+Nodes (7): InputManager, ProgressFn, ReadyFn, AudioSource, DisplaySource, FileSource, MicSource
 
 ### Community 2 - "Community 2"
 Cohesion: 0.06
@@ -126,19 +121,19 @@ Nodes (36): analyzeTrack(), analyzeWithFallback(), EssentiaFn, ProgressCb, PureF
 
 ### Community 3 - "Community 3"
 Cohesion: 0.06
-Nodes (28): AnalyzedTrack, Section, SectionTier, WAVEFORM, bandPeaks, Bands3, barNumber(), barSeconds() (+20 more)
+Nodes (36): AnalyzedTrack, Section, SectionTier, WAVEFORM, bandPeaks, Bands3, barNumber(), barSeconds() (+28 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.19
-Nodes (7): DropDetector, bandAvg(), binForFreq(), computeBands(), FeatureExtractor, DROP, FrequencyBands
+Cohesion: 0.06
+Nodes (20): BeatTracker, DropDetector, bandAvg(), binForFreq(), computeBands(), FeatureExtractor, OnsetDetector, OnsetResult (+12 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.18
-Nodes (6): GATES, LayerGates, gate(), Renderer, gate(), StageController
+Cohesion: 0.26
+Nodes (4): SILENT, FeatureProvider, LiveFeatureProvider, F()
 
 ### Community 6 - "Community 6"
-Cohesion: 0.08
-Nodes (14): SourceKind, SCENE_SWITCH, SCENES, AudioFeatures, Controls, ICON, Hud, HudCallbacks (+6 more)
+Cohesion: 0.10
+Nodes (13): GATES, KALEIDO, SCENE_SWITCH, SCENES, SEGMENT, TIER_COLORS, LayerGates, Palette (+5 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.06
@@ -281,36 +276,16 @@ Cohesion: 0.16
 Nodes (8): NowPlaying, parseNowPlaying(), randomString(), sha256(), SpotifyClient, SPOTIFY, esc(), NowPlaying
 
 ### Community 62 - "Community 62"
-Cohesion: 0.22
-Nodes (9): ExplosionLayer, jaggedLine(), lerp(), polyArea(), Pt, rayToRect(), Shard, Shockwave (+1 more)
+Cohesion: 0.05
+Nodes (40): BloomLayer, ShardRequest, CoreLayer, ExplosionLayer, jaggedLine(), lerp(), polyArea(), Pt (+32 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.23
-Nodes (7): BloomLayer, ShardRequest, KaleidoscopeLayer, Shard, Star, CAPS, Layer
-
-### Community 64 - "Community 64"
-Cohesion: 0.23
-Nodes (7): clamp(), computeMotionSpeed(), AnalyzedFeatureProvider, beatAt(), dropAt(), interp(), ENERGY
+Cohesion: 0.26
+Nodes (6): clamp(), computeMotionSpeed(), AnalyzedFeatureProvider, beatAt(), dropAt(), interp()
 
 ### Community 65 - "Community 65"
-Cohesion: 0.14
-Nodes (11): RibbonLayer, analysisOverlay, blooms, canvas, engine, fullscreen, idle, input (+3 more)
-
-### Community 66 - "Community 66"
-Cohesion: 0.29
-Nodes (5): autocorrelate(), estimateTempo(), TempoResult, globalTempo(), TEMPO
-
-### Community 67 - "Community 67"
-Cohesion: 0.20
-Nodes (3): Particle, ParticleSystem, SpawnOpts
-
-### Community 68 - "Community 68"
-Cohesion: 0.22
-Nodes (4): OnsetDetector, OnsetResult, silent, ONSET
-
-### Community 70 - "Community 70"
-Cohesion: 0.25
-Nodes (7): BAND_EDGES, CORE, KALEIDO, LIGHTNING, SMOOTHING, STARFIELD, TIER_COLORS
+Cohesion: 0.24
+Nodes (5): SourceKind, ENERGY, Controls, ICON, HudCallbacks
 
 ## Knowledge Gaps
 - **387 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+382 more)
@@ -320,17 +295,17 @@ Nodes (7): BAND_EDGES, CORE, KALEIDO, LIGHTNING, SMOOTHING, STARFIELD, TIER_COLO
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AudioFeatures` connect `Community 6` to `Community 64`, `Community 1`, `Community 0`, `Community 3`, `Community 4`, `Community 5`, `Community 63`?**
+- **Why does `AudioFeatures` connect `Community 0` to `Community 3`, `Community 67`, `Community 4`, `Community 5`, `Community 6`, `Community 62`, `Community 63`?**
   _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Why does `Transport` connect `Community 8` to `Community 1`, `Community 3`, `Community 6`?**
+- **Why does `Transport` connect `Community 8` to `Community 0`, `Community 1`, `Community 66`, `Community 3`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `AnalyzedTrack` connect `Community 3` to `Community 64`, `Community 1`, `Community 2`, `Community 6`?**
+- **Why does `AnalyzedTrack` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 66`, `Community 63`?**
   _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _387 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.07402031930333818 - nodes in this community are weakly interconnected._
 - **Should `Community 2` be split into smaller, more focused modules?**
   _Cohesion score 0.057971014492753624 - nodes in this community are weakly interconnected._
 - **Should `Community 3` be split into smaller, more focused modules?**
-  _Cohesion score 0.06398809523809523 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.062206572769953054 - nodes in this community are weakly interconnected._
+- **Should `Community 4` be split into smaller, more focused modules?**
+  _Cohesion score 0.05660377358490566 - nodes in this community are weakly interconnected._

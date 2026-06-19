@@ -1,5 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { bandPeaks, sampleBands, barSeconds, waveformWindow, pointerTime, formatTime, barNumber, currentSection, tierColor } from '../../src/ui/waveform';
+import { WAVEFORM } from '../../src/config';
+import {
+  bandPeaks,
+  sampleBands,
+  waveformColumn,
+  waveformBarMarkers,
+  waveformGridMarkers,
+  barSeconds,
+  waveformWindow,
+  pointerTime,
+  formatTime,
+  barNumber,
+  currentSection,
+  tierColor,
+} from '../../src/ui/waveform';
 import { analyzeTrack } from '../../src/audio/offline/analyzeTrack';
 import type { AnalyzedTrack, Section } from '../../src/audio/offline/types';
 
@@ -73,6 +87,29 @@ describe('bandPeaks + sampleBands (per-band balancing)', () => {
   });
 });
 
+describe('waveformColumn', () => {
+  it('uses one mirrored amplitude envelope instead of stacking band heights', () => {
+    const t = tinyTrack({
+      loudness: Float32Array.from([0, 0.25, 1]),
+      bass: Float32Array.from([1, 1, 1]),
+      lowMid: Float32Array.from([1, 1, 1]),
+      mid: Float32Array.from([1, 1, 1]),
+      high: Float32Array.from([1, 1, 1]),
+    });
+    const p = bandPeaks(t);
+    expect(waveformColumn(t, 0, p).amplitude).toBe(0);
+    expect(waveformColumn(t, 1, p).amplitude).toBeLessThan(waveformColumn(t, 2, p).amplitude);
+    expect(waveformColumn(t, 2, p).amplitude).toBeLessThanOrEqual(1);
+  });
+
+  it('colors columns by the dominant frequency band', () => {
+    const p = { low: 1, mid: 1, high: 1, loudness: 1 };
+    expect(waveformColumn(tinyTrack({ loudness: Float32Array.from([1]), bass: Float32Array.from([1]) }), 0, p).color).toBe(WAVEFORM.lowColor);
+    expect(waveformColumn(tinyTrack({ loudness: Float32Array.from([1]), mid: Float32Array.from([1]) }), 0, p).color).toBe(WAVEFORM.midColor);
+    expect(waveformColumn(tinyTrack({ loudness: Float32Array.from([1]), high: Float32Array.from([1]) }), 0, p).color).toBe(WAVEFORM.highColor);
+  });
+});
+
 describe('barSeconds / waveformWindow / pointerTime', () => {
   it('computes seconds per bar', () => {
     expect(barSeconds(120)).toBeCloseTo(2, 5);
@@ -91,6 +128,37 @@ describe('barSeconds / waveformWindow / pointerTime', () => {
   it('maps a pointer fraction to a time in the window', () => {
     expect(pointerTime(0.5, 10, 120)).toBeCloseTo(10, 5);
     expect(pointerTime(0, 10, 120)).toBeCloseTo(2, 5);
+  });
+});
+
+describe('waveformBarMarkers', () => {
+  it('places visible bar markers from BPM, independent of detected downbeats', () => {
+    const markers = waveformBarMarkers(10, 120, 100);
+    expect(markers.map((m) => m.time)).toEqual([2, 4, 6, 8, 10, 12, 14, 16, 18]);
+    expect(markers[0].x).toBeCloseTo(0, 5);
+    expect(markers[4].x).toBeCloseTo(0.5, 5);
+    expect(markers[8].x).toBeCloseTo(1, 5);
+  });
+
+  it('returns no markers when tempo is unknown', () => {
+    expect(waveformBarMarkers(10, 0, 100)).toEqual([]);
+  });
+});
+
+describe('waveformGridMarkers', () => {
+  it('labels beat subdivisions as bar.beat across the visible BPM grid', () => {
+    const markers = waveformGridMarkers(8, 120, 100);
+    expect(markers.slice(0, 8).map((m) => m.label)).toEqual([
+      '1.1', '1.2', '1.3', '1.4',
+      '2.1', '2.2', '2.3', '2.4',
+    ]);
+    expect(markers[0]).toMatchObject({ time: 0, x: 0, bar: 1, beat: 1, isBarStart: true });
+    expect(markers[1]).toMatchObject({ time: 0.5, beat: 2, isBarStart: false });
+    expect(markers[4]).toMatchObject({ time: 2, bar: 2, beat: 1, isBarStart: true });
+  });
+
+  it('returns no subdivision markers when tempo is unknown', () => {
+    expect(waveformGridMarkers(10, 0, 100)).toEqual([]);
   });
 });
 

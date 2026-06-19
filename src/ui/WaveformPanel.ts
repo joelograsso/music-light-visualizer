@@ -2,7 +2,7 @@ import { WAVEFORM } from '../config';
 import type { AnalyzedTrack } from '../audio/offline/types';
 import type { Transport } from '../audio/Transport';
 import type { AudioFeatures } from '../types';
-import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime, barNumber, currentSection, tierColor } from './waveform';
+import { bandPeaks, waveformColumn, waveformGridMarkers, waveformWindow, barSeconds, formatTime, barNumber, currentSection, tierColor } from './waveform';
 import type { BandPeaks } from './waveform';
 import { setButtonIcon, WaveformBandLegend, WaveformCanvasPane, WaveformTransportRow } from './WaveformPanelComponents';
 
@@ -34,7 +34,20 @@ export class WaveformPanel {
   private peaks?: BandPeaks;
   private showWave = true;
   private dragging = false;
-  private endDrag = (): void => { this.dragging = false; };
+  private dragStartX = 0;
+  private dragStartPos = 0;
+  private dragWindowSec = WAVEFORM.fallbackWindowSec;
+  private dragPointerId: number | null = null;
+  private endDrag = (e?: PointerEvent): void => {
+    if (!this.dragging) return;
+    if (e && this.dragPointerId !== null && e.pointerId !== this.dragPointerId) return;
+    if (this.dragPointerId !== null) {
+      try { this.canvas.releasePointerCapture(this.dragPointerId); } catch { /* pointer already released */ }
+    }
+    this.dragging = false;
+    this.dragPointerId = null;
+    this.wrap.classList.remove('dragging');
+  };
 
   constructor() {
     this.el.className = 'hud-wave hidden';
@@ -48,9 +61,10 @@ export class WaveformPanel {
     this.playBtn.addEventListener('click', () => this.togglePlay());
     this.toggleBtn.addEventListener('click', () => this.toggleWave());
 
-    this.canvas.addEventListener('pointerdown', (e) => { this.dragging = true; this.seekTo(e); });
-    this.canvas.addEventListener('pointermove', (e) => { if (this.dragging) this.seekTo(e); });
+    this.canvas.addEventListener('pointerdown', (e) => this.beginDrag(e));
+    this.canvas.addEventListener('pointermove', (e) => this.dragTo(e));
     window.addEventListener('pointerup', this.endDrag);
+    window.addEventListener('pointercancel', this.endDrag);
   }
 
   show(track: AnalyzedTrack, transport: Transport): void {
@@ -68,11 +82,13 @@ export class WaveformPanel {
     this.el.classList.add('hidden');
     this.track = undefined;
     this.transport = undefined;
+    this.endDrag();
   }
 
   /** Detach the global pointerup listener (call if the panel is ever discarded). */
   destroy(): void {
     window.removeEventListener('pointerup', this.endDrag);
+    window.removeEventListener('pointercancel', this.endDrag);
   }
 
   /** Called once per render frame with the current live features. */
@@ -149,12 +165,35 @@ export class WaveformPanel {
     if (this.transport && this.track) this.transport.seek(Math.max(0, this.track.duration - 0.05));
   }
 
-  private seekTo(e: PointerEvent): void {
+  private beginDrag(e: PointerEvent): void {
     if (!this.transport || !this.track) return;
     const rect = this.canvas.getBoundingClientRect();
     if (rect.width <= 0) return;
-    const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    this.transport.seek(pointerTime(frac, this.transport.position(), this.track.tempoBpm));
+    e.preventDefault();
+    this.dragging = true;
+    this.dragStartX = e.clientX;
+    this.dragStartPos = this.transport.position();
+    this.dragWindowSec = waveformWindow(this.dragStartPos, this.track.tempoBpm).windowSec;
+    this.dragPointerId = typeof e.pointerId === 'number' ? e.pointerId : null;
+    if (this.dragPointerId !== null) {
+      try { this.canvas.setPointerCapture(this.dragPointerId); } catch { /* capture is best-effort */ }
+    }
+    if (this.transport.isPlaying) {
+      this.transport.pause();
+      setButtonIcon(this.playBtn, 'play');
+    }
+    this.wrap.classList.add('dragging');
+  }
+
+  private dragTo(e: PointerEvent): void {
+    if (!this.dragging || !this.transport || !this.track) return;
+    if (this.dragPointerId !== null && e.pointerId !== this.dragPointerId) return;
+    const rect = this.canvas.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    e.preventDefault();
+    const deltaSec = ((e.clientX - this.dragStartX) / rect.width) * this.dragWindowSec;
+    const nextPos = Math.max(0, Math.min(this.track.duration, this.dragStartPos - deltaSec));
+    this.transport.seek(nextPos);
   }
 
   private draw(): void {
@@ -174,38 +213,52 @@ export class WaveformPanel {
     const { t0, windowSec } = waveformWindow(pos, this.track.tempoBpm);
     const mid = h / 2;
     const maxHalf = mid * WAVEFORM.heightScale;
-    const unit = maxHalf * WAVEFORM.bandHeightScale; // a fully-present band's height
 
-    // Stacked, mirrored band waveform: lows (red) at the core, mids (green) then highs
-    // (blue) layered outward. Each band is per-band normalized so highs stay visible.
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = WAVEFORM.waveStrokeAlpha;
+    ctx.lineCap = 'butt';
+
+    // Single mirrored waveform envelope: height follows loudness, color follows the dominant
+    // frequency band. This avoids the solid stacked blocks produced by filling each band.
     for (let x = 0; x < w; x++) {
-      const t = t0 + (x / w) * windowSec;
+      const t = t0 + ((x + 0.5) / w) * windowSec;
       if (t < 0 || t > dur) continue;
-      const b = sampleBands(this.track, t, this.peaks);
-      let acc = 0;
-      acc = this.stack(ctx, x, mid, acc, b.low * unit, maxHalf, WAVEFORM.lowColor);
-      acc = this.stack(ctx, x, mid, acc, b.mid * unit, maxHalf, WAVEFORM.midColor);
-      this.stack(ctx, x, mid, acc, b.high * unit, maxHalf, WAVEFORM.highColor);
+      const col = waveformColumn(this.track, t, this.peaks);
+      if (col.amplitude <= 0) continue;
+      const half = Math.max(1, col.amplitude * maxHalf);
+      ctx.strokeStyle = col.color;
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, mid - half);
+      ctx.lineTo(x + 0.5, mid + half);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    const grid = waveformGridMarkers(pos, this.track.tempoBpm, dur);
+    const beatSpacing = grid.length > 1 ? Math.abs((grid[1].x - grid[0].x) * w) : Infinity;
+    const showBeatLabels = beatSpacing >= WAVEFORM.minBeatLabelSpacingPx;
+
+    ctx.lineWidth = 1;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = '10px ui-monospace, monospace';
+    for (const marker of grid) {
+      const x = marker.x * w;
+      const isBar = marker.isBarStart;
+      ctx.strokeStyle = isBar ? WAVEFORM.barColor : WAVEFORM.subbarColor;
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, isBar ? 0 : 12);
+      ctx.lineTo(x + 0.5, isBar ? h : h - 12);
+      ctx.stroke();
+
+      if (showBeatLabels || isBar) {
+        ctx.fillStyle = isBar ? WAVEFORM.barLabelColor : WAVEFORM.subbarLabelColor;
+        const labelX = Math.max(14, Math.min(w - 14, x));
+        ctx.fillText(marker.label, labelX, 3);
+      }
     }
 
-    ctx.fillStyle = 'rgba(255,255,255,0.18)';
-    for (const dt of this.track.downbeats) {
-      if (dt < t0 || dt > t0 + windowSec) continue;
-      const x = ((dt - t0) / windowSec) * w;
-      ctx.fillRect(x, 0, 1, h);
-    }
-
-    ctx.fillStyle = '#fff';
+    ctx.fillStyle = WAVEFORM.playheadColor;
     ctx.fillRect(w / 2 - 1, 0, 2, h);
-  }
-
-  /** Draw one mirrored band segment from `acc` outward; returns the new stacked height (clamped). */
-  private stack(ctx: CanvasRenderingContext2D, x: number, mid: number, acc: number, hgt: number, maxHalf: number, color: string): number {
-    if (acc >= maxHalf || hgt <= 0) return acc;
-    const seg = Math.min(hgt, maxHalf - acc);
-    ctx.fillStyle = color;
-    ctx.fillRect(x, mid - acc - seg, 1, seg); // upper half
-    ctx.fillRect(x, mid + acc, 1, seg);       // lower half (mirror)
-    return acc + seg;
   }
 }

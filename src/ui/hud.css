@@ -156,6 +156,7 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 .hud-wleg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 .hud-wave-canvas-wrap { height: 110px; pointer-events: auto; }
 .hud-wave-canvas-wrap.hidden { display: none; }
-.hud-wave-canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+.hud-wave-canvas-wrap canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; user-select: none; }
+.hud-wave-canvas-wrap.dragging canvas { cursor: grabbing; }
 /* lift the dock above the waveform panel while it's visible */
 #ui.has-waveform .hud-dock { bottom: 168px; }

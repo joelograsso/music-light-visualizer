@@ -1,11 +1,11 @@
 {
   ".claude/settings.json": {
-    "mtime": 1781839395.025462,
+    "mtime": 1781845610.7481346,
     "ast_hash": "e1073342e958ac9f00716938c8f165e3",
     "semantic_hash": ""
   },
   ".codex/hooks.json": {
-    "mtime": 1781843744.9633408,
+    "mtime": 1781845610.752316,
     "ast_hash": "64d1ded9263ec58e53f941a5a8cbb70c",
     "semantic_hash": ""
   },
@@ -70,7 +70,7 @@
     "semantic_hash": ""
   },
   "src/audio/Transport.ts": {
-    "mtime": 1781844383.11994,
+    "mtime": 1781845610.7643707,
     "ast_hash": "24fc25bb5a24706b2c1940031971af86",
     "semantic_hash": ""
   },
@@ -205,8 +205,8 @@
     "semantic_hash": ""
   },
   "src/config.ts": {
-    "mtime": 1781840987.7202246,
-    "ast_hash": "c8cd1899b46638802026f79f123c8c80",
+    "mtime": 1781846594.4930856,
+    "ast_hash": "3f08433e13078f05d6235e44ce5fdb7b",
     "semantic_hash": ""
   },
   "src/main.ts": {
@@ -240,13 +240,13 @@
     "semantic_hash": ""
   },
   "src/ui/Hud.ts": {
-    "mtime": 1781841655.5143862,
+    "mtime": 1781845610.7654996,
     "ast_hash": "1ce726024175431e071044289c0eea14",
     "semantic_hash": ""
   },
   "src/ui/IdleHider.ts": {
-    "mtime": 1781798197.1310432,
-    "ast_hash": "a29ff071e9cf5ef2c3ce209465c2c871",
+    "mtime": 1781847453.1343462,
+    "ast_hash": "5ce4afe6bb65fd8b423305802512881f",
     "semantic_hash": ""
   },
   "src/ui/NowPlaying.ts": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "src/ui/WaveformPanel.ts": {
-    "mtime": 1781845069.9381402,
-    "ast_hash": "3f31d24e3eac203c0fc44986a5035fa4",
+    "mtime": 1781847105.0038047,
+    "ast_hash": "fa0ca2cf658e5ab3866a122bfdb5dec6",
     "semantic_hash": ""
   },
   "src/ui/meter.ts": {
@@ -265,8 +265,8 @@
     "semantic_hash": ""
   },
   "src/ui/waveform.ts": {
-    "mtime": 1781841154.2038913,
-    "ast_hash": "75d9aff5e403cac9f25b2d5981fc189c",
+    "mtime": 1781846607.2955236,
+    "ast_hash": "528fdada7af3c1b2c0b204270a937be1",
     "semantic_hash": ""
   },
   "src/visual/Layer.ts": {
@@ -380,7 +380,7 @@
     "semantic_hash": ""
   },
   "tests/audio/Transport.test.ts": {
-    "mtime": 1781844349.1875403,
+    "mtime": 1781845610.7695553,
     "ast_hash": "0c66a55f48e1cf48d05b40a6a86a24a3",
     "semantic_hash": ""
   },
@@ -490,13 +490,13 @@
     "semantic_hash": ""
   },
   "tests/ui/IdleHider.test.ts": {
-    "mtime": 1781798197.1332736,
-    "ast_hash": "a0673ad39e419a985dffe7abc42ea5dc",
+    "mtime": 1781847434.393622,
+    "ast_hash": "acedd3fb057ab960e2bfb93be4c4b715",
     "semantic_hash": ""
   },
   "tests/ui/WaveformPanel.test.ts": {
-    "mtime": 1781844959.4761705,
-    "ast_hash": "8538d17147f9472731b7bf48590022d2",
+    "mtime": 1781847220.8084772,
+    "ast_hash": "bbf51a255b4d39c95fa4cea0aaa7cbf7",
     "semantic_hash": ""
   },
   "tests/ui/meter.test.ts": {
@@ -505,8 +505,8 @@
     "semantic_hash": ""
   },
   "tests/ui/waveform.test.ts": {
-    "mtime": 1781840971.8580232,
-    "ast_hash": "89f00a2506a4e16c2c4cc0363638f719",
+    "mtime": 1781846582.508378,
+    "ast_hash": "748611c51f33a340fd752f6622e51fa5",
     "semantic_hash": ""
   },
   "tests/visual/Palette.test.ts": {
@@ -545,97 +545,97 @@
     "semantic_hash": ""
   },
   ".agents/skills/graphify/SKILL.md": {
-    "mtime": 1781843744.9626868,
+    "mtime": 1781845610.7441723,
     "ast_hash": "e3275f82c560052b5c8e675239088224",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/add-watch.md": {
-    "mtime": 1781839165.2732341,
+    "mtime": 1781845610.744613,
     "ast_hash": "0df0589623217ca38a12bdcabfb42f4c",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/exports.md": {
-    "mtime": 1781839165.2734406,
+    "mtime": 1781845610.7448323,
     "ast_hash": "c04ddf8f1f5ef5e262ebec491a523c74",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/extraction-spec.md": {
-    "mtime": 1781839165.2736804,
+    "mtime": 1781845610.7451646,
     "ast_hash": "123574cce6059efcc1fad35aa8356154",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/github-and-merge.md": {
-    "mtime": 1781839165.2739675,
+    "mtime": 1781845610.745642,
     "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/hooks.md": {
-    "mtime": 1781839165.274242,
+    "mtime": 1781845610.7461092,
     "ast_hash": "3f545db6ce646650bb9de588f5512a27",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/query.md": {
-    "mtime": 1781839165.2745273,
+    "mtime": 1781845610.746527,
     "ast_hash": "7d1ff295a0e0aa1cc9a14e52c3a19202",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/transcribe.md": {
-    "mtime": 1781839165.2748892,
+    "mtime": 1781845610.746911,
     "ast_hash": "70f6aa30d6211f3a2c7e9fc45479f50c",
     "semantic_hash": ""
   },
   ".agents/skills/graphify/references/update.md": {
-    "mtime": 1781839165.2750046,
+    "mtime": 1781845610.7472496,
     "ast_hash": "490df3fb6632ae0da4f74f0d98e1d710",
     "semantic_hash": ""
   },
   ".claude/CLAUDE.md": {
-    "mtime": 1781839395.0238738,
+    "mtime": 1781845610.7477753,
     "ast_hash": "db73b0edd7ffbc61ceac177130730865",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/SKILL.md": {
-    "mtime": 1781839395.022709,
+    "mtime": 1781845610.74891,
     "ast_hash": "e1886deae4635c018fcc38dbc135d5bf",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/add-watch.md": {
-    "mtime": 1781839165.2732341,
+    "mtime": 1781845610.7492983,
     "ast_hash": "0df0589623217ca38a12bdcabfb42f4c",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/exports.md": {
-    "mtime": 1781839165.2734406,
+    "mtime": 1781845610.7496345,
     "ast_hash": "c04ddf8f1f5ef5e262ebec491a523c74",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/extraction-spec.md": {
-    "mtime": 1781839165.2736804,
+    "mtime": 1781845610.749904,
     "ast_hash": "123574cce6059efcc1fad35aa8356154",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/github-and-merge.md": {
-    "mtime": 1781839165.2739675,
+    "mtime": 1781845610.7502441,
     "ast_hash": "cde13df085e4c492aeb7ba298a996d0d",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/hooks.md": {
-    "mtime": 1781839165.274242,
+    "mtime": 1781845610.7505069,
     "ast_hash": "3f545db6ce646650bb9de588f5512a27",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/query.md": {
-    "mtime": 1781839165.2745273,
+    "mtime": 1781845610.7508254,
     "ast_hash": "7d1ff295a0e0aa1cc9a14e52c3a19202",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/transcribe.md": {
-    "mtime": 1781839165.2748892,
+    "mtime": 1781845610.7515085,
     "ast_hash": "70f6aa30d6211f3a2c7e9fc45479f50c",
     "semantic_hash": ""
   },
   ".claude/skills/graphify/references/update.md": {
-    "mtime": 1781839165.2750046,
+    "mtime": 1781845610.7519362,
     "ast_hash": "490df3fb6632ae0da4f74f0d98e1d710",
     "semantic_hash": ""
   },
@@ -675,22 +675,22 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1781843744.9594972,
+    "mtime": 1781845610.7528892,
     "ast_hash": "82efb97a359f5c7290bf2513d14686be",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1781839395.0248778,
+    "mtime": 1781845610.753039,
     "ast_hash": "82efb97a359f5c7290bf2513d14686be",
     "semantic_hash": ""
   },
   "docs/handoffs/2026-06-18-1121-stage-a-offline-analysis.md": {
-    "mtime": 1781803383.106866,
+    "mtime": 1781845610.753605,
     "ast_hash": "deac422d216ca7636cd487f8febd57d2",
     "semantic_hash": ""
   },
   "docs/handoffs/2026-06-18-1648-stage-b-segmentation.md": {
-    "mtime": 1781823028.5206175,
+    "mtime": 1781845610.7539635,
     "ast_hash": "980316060131e19a6b0fedae8b3eeff7",
     "semantic_hash": ""
   },
@@ -730,7 +730,7 @@
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-06-18-transport-info-bar.md": {
-    "mtime": 1781840405.5714483,
+    "mtime": 1781845610.754416,
     "ast_hash": "3dd7424703fbb91423d6a44a458793db",
     "semantic_hash": ""
   },
@@ -765,7 +765,7 @@
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-06-18-transport-info-bar-design.md": {
-    "mtime": 1781840074.2815337,
+    "mtime": 1781845610.7547328,
     "ast_hash": "33fe8de14724197a1818dc8c68e86fb3",
     "semantic_hash": ""
   },
@@ -775,8 +775,8 @@
     "semantic_hash": ""
   },
   "src/ui/WaveformPanelComponents.ts": {
-    "mtime": 1781845022.4467814,
-    "ast_hash": "9102f86fac075c62d9db16e6e3bd3209",
+    "mtime": 1781847233.9661531,
+    "ast_hash": "a7732eed7d8c1329fa1db6c014daffb7",
     "semantic_hash": ""
   }
 }

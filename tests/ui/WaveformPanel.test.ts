@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WaveformPanel } from '../../src/ui/WaveformPanel';
+import { setButtonIcon } from '../../src/ui/WaveformPanelComponents';
 import type { AnalyzedTrack } from '../../src/audio/offline/types';
 import type { AudioFeatures } from '../../src/types';
 
@@ -15,12 +16,12 @@ function track(over: Partial<AnalyzedTrack> = {}): AnalyzedTrack {
   };
 }
 
-function fakeTransport() {
+function fakeTransport(over: { isPlaying?: boolean; position?: number } = {}) {
   return {
-    isPlaying: false,
+    isPlaying: over.isPlaying ?? false,
     duration: 100,
     calls: [] as any[],
-    position() { return 10; },
+    position() { return over.position ?? 10; },
     play() { this.isPlaying = true; this.calls.push('play'); },
     pause() { this.isPlaying = false; this.calls.push('pause'); },
     seek(s: number) { this.calls.push(['seek', s]); },
@@ -35,6 +36,14 @@ const F = (over: Partial<AudioFeatures> = {}): AudioFeatures =>
 describe('WaveformPanel', () => {
   let root: HTMLElement;
   beforeEach(() => { root = document.createElement('div'); document.body.appendChild(root); });
+
+  it('does not replace button icon DOM when the icon has not changed', () => {
+    const button = document.createElement('button');
+    setButtonIcon(button, 'play');
+    const icon = button.firstElementChild;
+    setButtonIcon(button, 'play');
+    expect(button.firstElementChild).toBe(icon);
+  });
 
   it('builds the bar from named DOM subcomponents', () => {
     const p = new WaveformPanel(); root.appendChild(p.el);
@@ -77,14 +86,35 @@ describe('WaveformPanel', () => {
     expect(tr.calls).toContainEqual(['seek', 12]);
   });
 
-  it('click on the canvas seeks to the pointed time', () => {
+  it('pointerdown on the canvas pauses playback without jumping', () => {
     const p = new WaveformPanel(); root.appendChild(p.el);
-    const tr = fakeTransport();
+    const tr = fakeTransport({ isPlaying: true });
     p.show(track(), tr as any);
     const canvas = p.el.querySelector('canvas') as HTMLCanvasElement;
     canvas.getBoundingClientRect = () => ({ left: 0, width: 100, top: 0, height: 110, right: 100, bottom: 110, x: 0, y: 0, toJSON() {} });
     canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 50, bubbles: true }));
-    expect(tr.calls).toContainEqual(['seek', 10]); // frac .5 -> t0 2 + .5*16
+    expect(tr.calls).toEqual(['pause']);
+    expect(tr.isPlaying).toBe(false);
+  });
+
+  it('dragging the waveform scrubs around the paused start position', () => {
+    const p = new WaveformPanel(); root.appendChild(p.el);
+    const tr = fakeTransport({ position: 10 });
+    p.show(track(), tr as any);
+    const canvas = p.el.querySelector('canvas') as HTMLCanvasElement;
+    canvas.getBoundingClientRect = () => ({ left: 0, width: 100, top: 0, height: 110, right: 100, bottom: 110, x: 0, y: 0, toJSON() {} });
+
+    canvas.dispatchEvent(new MouseEvent('pointerdown', { clientX: 50, bubbles: true }));
+    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 25, bubbles: true }));
+    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 75, bubbles: true }));
+    window.dispatchEvent(new MouseEvent('pointerup', { bubbles: true }));
+    canvas.dispatchEvent(new MouseEvent('pointermove', { clientX: 0, bubbles: true }));
+
+    const seeks = tr.calls.filter(Array.isArray);
+    expect(seeks).toEqual([
+      ['seek', 14], // 25px left over a 16s window advances by 4s.
+      ['seek', 6],  // 25px right over the same window rewinds by 4s.
+    ]);
   });
 
   it('frame() updates the time readout and does not throw without a 2D context', () => {

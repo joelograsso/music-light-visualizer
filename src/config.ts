@@ -216,11 +216,17 @@ export const WAVEFORM = {
   beatsPerBar: 4,
   fallbackWindowSec: 8,   // window length when tempo is unknown (tempoBpm === 0)
   heightScale: 0.9,       // waveform fills this fraction of the half-canvas height
-  bandHeightScale: 0.6,   // a fully-present band reaches this fraction of the half-canvas (then bands stack)
   peakPercentile: 0.95,   // per-band normalization peak (robust vs lone transients) so quiet highs stay visible
-  lowColor: '#e23b3b',    // lows (kick/bass) — red
-  midColor: '#46c93a',    // mids (vocals/synths) — green
-  highColor: '#3a8ee2',   // highs (hats/risers) — blue
+  lowColor: '#ff2a2a',    // lows (kick/bass) — red
+  midColor: '#b9e63b',    // mids (vocals/synths) — yellow/green
+  highColor: '#1f8cff',   // highs (hats/risers) — blue
+  barColor: 'rgba(210, 220, 235, 0.44)',
+  subbarColor: 'rgba(210, 220, 235, 0.22)',
+  barLabelColor: 'rgba(235, 242, 255, 0.78)',
+  subbarLabelColor: 'rgba(210, 220, 235, 0.54)',
+  minBeatLabelSpacingPx: 28,
+  playheadColor: '#ffffff',
+  waveStrokeAlpha: 0.92,
   seekStepBars: 1,        // skip-back / skip-forward step, in bars
 };
 

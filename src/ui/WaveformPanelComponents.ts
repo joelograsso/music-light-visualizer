@@ -22,7 +22,9 @@ interface ButtonOptions {
 }
 
 export function setButtonIcon(button: HTMLButtonElement, icon: WaveformIcon): void {
+  if (button.dataset.icon === icon) return;
   button.innerHTML = ICON[icon];
+  button.dataset.icon = icon;
 }
 
 function button(options: ButtonOptions): HTMLButtonElement {
