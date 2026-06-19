@@ -2,6 +2,9 @@
 #ui { --accent: hsl(205, 90%, 62%); transition: opacity .35s ease; }
 #ui.ui-hidden { opacity: 0; }
 #ui.ui-hidden > * { pointer-events: none; }
+/* Keep the file transport bar clickable even while the HUD is idle-faded, so the first
+   click on play/pause always lands (otherwise it falls through to the #stage canvas). */
+#ui.ui-hidden > .hud-wave { pointer-events: auto; }
 
 .hud-dock {
   position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
