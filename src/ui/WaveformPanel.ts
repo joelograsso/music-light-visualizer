@@ -32,6 +32,7 @@ export class WaveformPanel {
   private sectionDot!: HTMLElement;
   private sectionLabel!: HTMLElement;
   private energyFill!: HTMLElement;
+  private legendEl!: HTMLElement;
   private lastBpm = -1;
   private lastBar = -1;
   private lastSectionIdx = -1;
@@ -62,6 +63,12 @@ export class WaveformPanel {
         <span class="hud-wspacer"></span>
         <button class="hud-wbtn" data-a="toggle" title="Toggle waveform" aria-label="Toggle waveform">${ICON.eye}</button>
       </div>
+      <div class="hud-wlegend">
+        <span class="hud-wleg-label">bands</span>
+        <span class="hud-wleg"><i style="background:${WAVEFORM.lowColor}"></i>lows</span>
+        <span class="hud-wleg"><i style="background:${WAVEFORM.midColor}"></i>mids</span>
+        <span class="hud-wleg"><i style="background:${WAVEFORM.highColor}"></i>highs</span>
+      </div>
       <div class="hud-wave-canvas-wrap"></div>`;
 
     this.wrap = this.el.querySelector('.hud-wave-canvas-wrap') as HTMLElement;
@@ -76,6 +83,7 @@ export class WaveformPanel {
     this.sectionDot = this.el.querySelector('.hud-wsection-dot') as HTMLElement;
     this.sectionLabel = this.el.querySelector('.hud-wsection b') as HTMLElement;
     this.energyFill = this.el.querySelector('.hud-wenergy i') as HTMLElement;
+    this.legendEl = this.el.querySelector('.hud-wlegend') as HTMLElement;
     try { this.cctx = this.canvas.getContext('2d'); } catch { this.cctx = null; }
 
     this.el.querySelector('[data-a="back"]')!.addEventListener('click', () => this.skip(-1));
@@ -162,6 +170,7 @@ export class WaveformPanel {
   private toggleWave(): void {
     this.showWave = !this.showWave;
     this.wrap.classList.toggle('hidden', !this.showWave);
+    this.legendEl.classList.toggle('hidden', !this.showWave);
     this.toggleBtn.innerHTML = this.showWave ? ICON.eye : ICON.eyeoff;
   }
 

@@ -145,6 +145,11 @@ button:focus-visible, input:focus-visible { outline: 1px solid var(--accent); ou
 .hud-wsection-dot { width: 8px; height: 8px; border-radius: 50%; }
 .hud-wenergy { width: 54px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
 .hud-wenergy i { display: block; height: 100%; width: 0; background: var(--accent); }
+.hud-wlegend { display: flex; align-items: center; gap: 12px; padding: 0 12px 6px; font-size: 11px; color: #8b94a4; }
+.hud-wlegend.hidden { display: none; }
+.hud-wleg-label { color: #6b7280; }
+.hud-wleg { display: inline-flex; align-items: center; gap: 5px; }
+.hud-wleg i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
 .hud-wave-canvas-wrap { height: 110px; }
 .hud-wave-canvas-wrap.hidden { display: none; }
 .hud-wave-canvas-wrap canvas { display: block; width: 100%; height: 100%; }

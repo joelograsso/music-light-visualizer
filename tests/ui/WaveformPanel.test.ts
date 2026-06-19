@@ -118,4 +118,14 @@ describe('WaveformPanel', () => {
     p.frame(F());
     expect((p.el.querySelector('.hud-wsection') as HTMLElement).classList.contains('hidden')).toBe(true);
   });
+
+  it('renders a 3-band color legend that hides with the waveform', () => {
+    const p = new WaveformPanel(); root.appendChild(p.el);
+    p.show(track(), fakeTransport() as any);
+    expect(p.el.querySelectorAll('.hud-wleg').length).toBe(3);
+    const legend = p.el.querySelector('.hud-wlegend') as HTMLElement;
+    expect(legend.classList.contains('hidden')).toBe(false);
+    (p.el.querySelector('[data-a="toggle"]') as HTMLButtonElement).click();
+    expect(legend.classList.contains('hidden')).toBe(true);
+  });
 });
