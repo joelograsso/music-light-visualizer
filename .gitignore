@@ -2,6 +2,7 @@ node_modules/
 .superpowers/
 dist/
 .vite/
+.next/
 .DS_Store
 .env
 .env.local

@@ -178,8 +178,8 @@ export const SEGMENT = {
 
 /** Spotify — fill in your registered app's values. */
 export const SPOTIFY = {
-  clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID ?? '',
-  redirectUri: import.meta.env.VITE_SPOTIFY_REDIRECT_URI ?? 'http://127.0.0.1:5173',
+  clientId: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID ?? '',
+  redirectUri: process.env.NEXT_PUBLIC_SPOTIFY_REDIRECT_URI ?? 'http://127.0.0.1:3000',
   scopes: 'user-read-currently-playing user-read-playback-state',
 };
 

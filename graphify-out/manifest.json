@@ -20,8 +20,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1781820973.8956254,
-    "ast_hash": "74286275507e25565ada0c2967b89deb",
+    "mtime": 1781848288.7860768,
+    "ast_hash": "e6deedf109000522436082e4f6aa3d2b",
     "semantic_hash": ""
   },
   "src/audio/AudioEngine.ts": {
@@ -205,13 +205,8 @@
     "semantic_hash": ""
   },
   "src/config.ts": {
-    "mtime": 1781846594.4930856,
-    "ast_hash": "3f08433e13078f05d6235e44ce5fdb7b",
-    "semantic_hash": ""
-  },
-  "src/main.ts": {
-    "mtime": 1781844211.5135665,
-    "ast_hash": "e2b0f63e2d1ceaccb2fc696be24aa92b",
+    "mtime": 1781848380.9692624,
+    "ast_hash": "5a08835cb3db61c8f2fc7df31e55f7df",
     "semantic_hash": ""
   },
   "src/spotify/SpotifyClient.ts": {
@@ -235,8 +230,8 @@
     "semantic_hash": ""
   },
   "src/ui/FullscreenController.ts": {
-    "mtime": 1781798197.1306763,
-    "ast_hash": "ed5277579071a390211bab5bab91e901",
+    "mtime": 1781848278.6137218,
+    "ast_hash": "9d8d000b877b7c6274570cc3c1cd61a6",
     "semantic_hash": ""
   },
   "src/ui/Hud.ts": {
@@ -337,11 +332,6 @@
   "src/visual/layers/StarfieldLayer.ts": {
     "mtime": 1781765286.405289,
     "ast_hash": "1c419bdce249514793938ff3c3db4038",
-    "semantic_hash": ""
-  },
-  "src/vite-env.d.ts": {
-    "mtime": 1781761289.011134,
-    "ast_hash": "0352474ba2918efe13895edbc3780d94",
     "semantic_hash": ""
   },
   "tests/audio/BeatTracker.test.ts": {
@@ -480,8 +470,8 @@
     "semantic_hash": ""
   },
   "tests/ui/FullscreenController.test.ts": {
-    "mtime": 1781798197.1325302,
-    "ast_hash": "e95d1c055df02d10bbb4eb04e8d8a7da",
+    "mtime": 1781848234.7197695,
+    "ast_hash": "ff7d54616ec4a97b903b1d24d15757b3",
     "semantic_hash": ""
   },
   "tests/ui/Hud.test.ts": {
@@ -530,13 +520,8 @@
     "semantic_hash": ""
   },
   "tsconfig.json": {
-    "mtime": 1781761289.013411,
-    "ast_hash": "7e76994081b3628998fb402b68c1f8ab",
-    "semantic_hash": ""
-  },
-  "vite.config.ts": {
-    "mtime": 1781820973.9253633,
-    "ast_hash": "82fbddc06ab9ae25f166429f3c95d6c5",
+    "mtime": 1781848347.426965,
+    "ast_hash": "9bf836b4db79fd2009eb615e3c1d0d6b",
     "semantic_hash": ""
   },
   "vitest.config.ts": {
@@ -769,14 +754,54 @@
     "ast_hash": "33fe8de14724197a1818dc8c68e86fb3",
     "semantic_hash": ""
   },
-  "index.html": {
-    "mtime": 1781761288.9994981,
-    "ast_hash": "bd0385811a1d53f923f6b745c60b8c46",
-    "semantic_hash": ""
-  },
   "src/ui/WaveformPanelComponents.ts": {
     "mtime": 1781847233.9661531,
     "ast_hash": "a7732eed7d8c1329fa1db6c014daffb7",
+    "semantic_hash": ""
+  },
+  "app/layout.tsx": {
+    "mtime": 1781848278.6147497,
+    "ast_hash": "6ecef7298369971ebedb88a4f65b8173",
+    "semantic_hash": ""
+  },
+  "app/page.tsx": {
+    "mtime": 1781848278.6149888,
+    "ast_hash": "6c33230cdb7c7bb2dd542bb8e519f869",
+    "semantic_hash": ""
+  },
+  "next-env.d.ts": {
+    "mtime": 1781848347.4297788,
+    "ast_hash": "2a74d3909800ca5467fa83b0ab4a4890",
+    "semantic_hash": ""
+  },
+  "next.config.mjs": {
+    "mtime": 1781848341.4600213,
+    "ast_hash": "814d61b0dcfaac30d39de262c765d6ef",
+    "semantic_hash": ""
+  },
+  "src/VisualizerApp.tsx": {
+    "mtime": 1781848278.6153822,
+    "ast_hash": "95db83ffdd6874f6ac96c777565f9258",
+    "semantic_hash": ""
+  },
+  "src/shims/empty-module.ts": {
+    "mtime": 1781848341.459604,
+    "ast_hash": "1c514db983d6d57685e626c06a0a174d",
+    "semantic_hash": ""
+  },
+  "src/visualizer.ts": {
+    "mtime": 1781848278.615572,
+    "ast_hash": "7cc3ba808415b0079ded61504cdc405f",
+    "semantic_hash": ""
+  },
+  "tests/nextApp.test.ts": {
+    "mtime": 1781848370.261423,
+    "ast_hash": "cd5dd826148046dd333c8fe08a33a799",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-06-19-nextjs-conversion.md": {
+    "mtime": 1781848123.5809097,
+    "ast_hash": "541fb133bca938610eb53f243c54803c",
     "semantic_hash": ""
   }
 }

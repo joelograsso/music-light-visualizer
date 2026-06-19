@@ -37,6 +37,16 @@ describe('FullscreenController', () => {
     expect(cb).toHaveBeenCalledWith(false);
   });
 
+  it('removes fullscreen listeners when the returned cleanup runs', () => {
+    setFsElement(null);
+    const fc = new FullscreenController();
+    const cb = vi.fn();
+    const cleanup = fc.onChange(cb);
+    cleanup();
+    document.dispatchEvent(new Event('fullscreenchange'));
+    expect(cb).not.toHaveBeenCalled();
+  });
+
   it('does not throw when the API is unavailable', () => {
     setFsElement(null);
     const el = document.createElement('div'); // no requestFullscreen

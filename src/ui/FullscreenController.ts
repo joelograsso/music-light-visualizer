@@ -21,10 +21,14 @@ export class FullscreenController {
     else this.request();
   }
 
-  onChange(cb: (active: boolean) => void): void {
+  onChange(cb: (active: boolean) => void): () => void {
     const handler = (): void => cb(this.isActive);
     document.addEventListener('fullscreenchange', handler);
     document.addEventListener('webkitfullscreenchange', handler);
+    return () => {
+      document.removeEventListener('fullscreenchange', handler);
+      document.removeEventListener('webkitfullscreenchange', handler);
+    };
   }
 
   private request(): void {
