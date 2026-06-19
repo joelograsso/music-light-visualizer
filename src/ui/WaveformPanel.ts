@@ -5,8 +5,10 @@ import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, format
 import type { BandPeaks } from './waveform';
 
 const ICON = {
-  back: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3v10H3.5V3z"/><path d="M13 3l-7 5 7 5z"/></svg>',
-  fwd: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3l7 5-7 5z"/><path d="M11 3v10h1.5V3z"/></svg>',
+  start: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="1.7" height="10"/><path d="M13 3.2v9.6L6 8z"/></svg>',
+  end: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3.2v9.6L10 8z"/><rect x="11.3" y="3" width="1.7" height="10"/></svg>',
+  back: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>',
+  fwd: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',
   play: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3l8 5-8 5z"/></svg>',
   pause: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/></svg>',
   eye: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8z"/><circle cx="8" cy="8" r="2"/></svg>',
@@ -33,9 +35,11 @@ export class WaveformPanel {
     this.el.className = 'hud-wave hidden';
     this.el.innerHTML = `
       <div class="hud-wave-row">
+        <button class="hud-wbtn" data-a="start" title="Jump to start" aria-label="Jump to start">${ICON.start}</button>
         <button class="hud-wbtn" data-a="back" title="Back one bar" aria-label="Seek back one bar">${ICON.back}</button>
         <button class="hud-wbtn main" data-a="play" title="Play / pause" aria-label="Play or pause">${ICON.play}</button>
         <button class="hud-wbtn" data-a="fwd" title="Forward one bar" aria-label="Seek forward one bar">${ICON.fwd}</button>
+        <button class="hud-wbtn" data-a="end" title="Jump to end" aria-label="Jump to end">${ICON.end}</button>
         <span class="hud-wtime">0:00 / 0:00</span>
         <span class="hud-wspacer"></span>
         <button class="hud-wbtn" data-a="toggle" title="Toggle waveform" aria-label="Toggle waveform">${ICON.eye}</button>
@@ -51,6 +55,8 @@ export class WaveformPanel {
 
     this.el.querySelector('[data-a="back"]')!.addEventListener('click', () => this.skip(-1));
     this.el.querySelector('[data-a="fwd"]')!.addEventListener('click', () => this.skip(1));
+    this.el.querySelector('[data-a="start"]')!.addEventListener('click', () => this.seekToStart());
+    this.el.querySelector('[data-a="end"]')!.addEventListener('click', () => this.seekToEnd());
     this.playBtn.addEventListener('click', () => this.togglePlay());
     this.toggleBtn.addEventListener('click', () => this.toggleWave());
 
@@ -110,6 +116,15 @@ export class WaveformPanel {
   private skip(dir: number): void {
     if (!this.transport) return;
     this.transport.seek(this.transport.position() + dir * this.step());
+  }
+
+  private seekToStart(): void {
+    if (!this.transport) return;
+    this.transport.seek(0);
+  }
+
+  private seekToEnd(): void {
+    if (this.transport && this.track) this.transport.seek(Math.max(0, this.track.duration - 0.05));
   }
 
   private seekTo(e: PointerEvent): void {

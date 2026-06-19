@@ -81,4 +81,14 @@ describe('WaveformPanel', () => {
     expect(() => p.frame()).not.toThrow();
     expect((p.el.querySelector('.hud-wtime') as HTMLElement).textContent).toBe('0:10 / 1:40');
   });
+
+  it('jump-to-start/end seek to the track ends', () => {
+    const p = new WaveformPanel(); root.appendChild(p.el);
+    const tr = fakeTransport(); // duration 100
+    p.show(track(), tr as any);
+    (p.el.querySelector('[data-a="start"]') as HTMLButtonElement).click();
+    (p.el.querySelector('[data-a="end"]') as HTMLButtonElement).click();
+    expect(tr.calls).toContainEqual(['seek', 0]);
+    expect(tr.calls).toContainEqual(['seek', 99.95]); // duration 100 - 0.05
+  });
 });
