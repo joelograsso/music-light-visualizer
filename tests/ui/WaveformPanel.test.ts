@@ -36,6 +36,14 @@ describe('WaveformPanel', () => {
   let root: HTMLElement;
   beforeEach(() => { root = document.createElement('div'); document.body.appendChild(root); });
 
+  it('builds the bar from named DOM subcomponents', () => {
+    const p = new WaveformPanel(); root.appendChild(p.el);
+    expect(p.el.querySelector('[data-component="transport-controls"]')).not.toBeNull();
+    expect(p.el.querySelector('[data-component="transport-info"]')).not.toBeNull();
+    expect(p.el.querySelector('[data-component="band-legend"]')).not.toBeNull();
+    expect(p.el.querySelector('[data-component="waveform-canvas"]')).not.toBeNull();
+  });
+
   it('the eye toggle hides and shows the canvas', () => {
     const p = new WaveformPanel(); root.appendChild(p.el);
     p.show(track(), fakeTransport() as any);

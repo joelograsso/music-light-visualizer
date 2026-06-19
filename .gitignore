@@ -8,3 +8,4 @@ dist/
 .env.*.local
 .playwright-mcp/
 *.png
+graphify-out/cache/

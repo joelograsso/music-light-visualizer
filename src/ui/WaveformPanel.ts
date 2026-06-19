@@ -4,35 +4,28 @@ import type { Transport } from '../audio/Transport';
 import type { AudioFeatures } from '../types';
 import { bandPeaks, sampleBands, waveformWindow, barSeconds, pointerTime, formatTime, barNumber, currentSection, tierColor } from './waveform';
 import type { BandPeaks } from './waveform';
-
-const ICON = {
-  start: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="3" width="1.7" height="10"/><path d="M13 3.2v9.6L6 8z"/></svg>',
-  end: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 3.2v9.6L10 8z"/><rect x="11.3" y="3" width="1.7" height="10"/></svg>',
-  back: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>',
-  fwd: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',
-  play: '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3l8 5-8 5z"/></svg>',
-  pause: '<svg viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/></svg>',
-  eye: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8z"/><circle cx="8" cy="8" r="2"/></svg>',
-  eyeoff: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8s2.5-4.5 7-4.5c1 0 1.9.2 2.7.5M15 8s-2.5 4.5-7 4.5c-1 0-1.9-.2-2.7-.5"/><path d="M2 2l12 12"/></svg>',
-};
+import { setButtonIcon, WaveformBandLegend, WaveformCanvasPane, WaveformTransportRow } from './WaveformPanelComponents';
 
 /** Bottom panel (file-only): transport controls + a scrolling band-colored waveform. */
 export class WaveformPanel {
   readonly el = document.createElement('div');
-  private canvas = document.createElement('canvas');
+  private row = new WaveformTransportRow();
+  private legend = new WaveformBandLegend();
+  private canvasPane = new WaveformCanvasPane();
+  private canvas = this.canvasPane.canvas;
   private cctx: CanvasRenderingContext2D | null = null;
-  private wrap: HTMLElement;
-  private playBtn: HTMLButtonElement;
-  private toggleBtn: HTMLButtonElement;
-  private timeEl: HTMLElement;
-  private bpmEl!: HTMLElement;
-  private bpmDot!: HTMLElement;
-  private barEl!: HTMLElement;
-  private sectionEl!: HTMLElement;
-  private sectionDot!: HTMLElement;
-  private sectionLabel!: HTMLElement;
-  private energyFill!: HTMLElement;
-  private legendEl!: HTMLElement;
+  private wrap = this.canvasPane.el;
+  private playBtn = this.row.controls.playBtn;
+  private toggleBtn = this.row.toggleBtn;
+  private timeEl = this.row.info.timeEl;
+  private bpmEl = this.row.info.bpmEl;
+  private bpmDot = this.row.info.bpmDot;
+  private barEl = this.row.info.barEl;
+  private sectionEl = this.row.info.sectionEl;
+  private sectionDot = this.row.info.sectionDot;
+  private sectionLabel = this.row.info.sectionLabel;
+  private energyFill = this.row.info.energyFill;
+  private legendEl = this.legend.el;
   private lastBpm = -1;
   private lastBar = -1;
   private lastSectionIdx = -1;
@@ -45,51 +38,13 @@ export class WaveformPanel {
 
   constructor() {
     this.el.className = 'hud-wave hidden';
-    this.el.innerHTML = `
-      <div class="hud-wave-row">
-        <button class="hud-wbtn" data-a="start" title="Jump to start" aria-label="Jump to start">${ICON.start}</button>
-        <button class="hud-wbtn" data-a="back" title="Back one bar" aria-label="Seek back one bar">${ICON.back}</button>
-        <button class="hud-wbtn main" data-a="play" title="Play / pause" aria-label="Play or pause">${ICON.play}</button>
-        <button class="hud-wbtn" data-a="fwd" title="Forward one bar" aria-label="Seek forward one bar">${ICON.fwd}</button>
-        <button class="hud-wbtn" data-a="end" title="Jump to end" aria-label="Jump to end">${ICON.end}</button>
-        <span class="hud-wtime">0:00 / 0:00</span>
-        <span class="hud-wspacer"></span>
-        <div class="hud-winfo">
-          <span class="hud-wbpm"><i class="hud-wbpm-dot"></i><b>0</b> BPM</span>
-          <span class="hud-wbar">Bar <b>1</b></span>
-          <span class="hud-wsection hidden"><i class="hud-wsection-dot"></i><b></b></span>
-          <span class="hud-wenergy" title="energy"><i></i></span>
-        </div>
-        <span class="hud-wspacer"></span>
-        <button class="hud-wbtn" data-a="toggle" title="Toggle waveform" aria-label="Toggle waveform">${ICON.eye}</button>
-      </div>
-      <div class="hud-wlegend">
-        <span class="hud-wleg-label">bands</span>
-        <span class="hud-wleg"><i style="background:${WAVEFORM.lowColor}"></i>lows</span>
-        <span class="hud-wleg"><i style="background:${WAVEFORM.midColor}"></i>mids</span>
-        <span class="hud-wleg"><i style="background:${WAVEFORM.highColor}"></i>highs</span>
-      </div>
-      <div class="hud-wave-canvas-wrap"></div>`;
-
-    this.wrap = this.el.querySelector('.hud-wave-canvas-wrap') as HTMLElement;
-    this.wrap.appendChild(this.canvas);
-    this.playBtn = this.el.querySelector('[data-a="play"]') as HTMLButtonElement;
-    this.toggleBtn = this.el.querySelector('[data-a="toggle"]') as HTMLButtonElement;
-    this.timeEl = this.el.querySelector('.hud-wtime') as HTMLElement;
-    this.bpmEl = this.el.querySelector('.hud-wbpm b') as HTMLElement;
-    this.bpmDot = this.el.querySelector('.hud-wbpm-dot') as HTMLElement;
-    this.barEl = this.el.querySelector('.hud-wbar b') as HTMLElement;
-    this.sectionEl = this.el.querySelector('.hud-wsection') as HTMLElement;
-    this.sectionDot = this.el.querySelector('.hud-wsection-dot') as HTMLElement;
-    this.sectionLabel = this.el.querySelector('.hud-wsection b') as HTMLElement;
-    this.energyFill = this.el.querySelector('.hud-wenergy i') as HTMLElement;
-    this.legendEl = this.el.querySelector('.hud-wlegend') as HTMLElement;
+    this.el.append(this.row.el, this.legend.el, this.canvasPane.el);
     try { this.cctx = this.canvas.getContext('2d'); } catch { this.cctx = null; }
 
-    this.el.querySelector('[data-a="back"]')!.addEventListener('click', () => this.skip(-1));
-    this.el.querySelector('[data-a="fwd"]')!.addEventListener('click', () => this.skip(1));
-    this.el.querySelector('[data-a="start"]')!.addEventListener('click', () => this.seekToStart());
-    this.el.querySelector('[data-a="end"]')!.addEventListener('click', () => this.seekToEnd());
+    this.row.controls.backBtn.addEventListener('click', () => this.skip(-1));
+    this.row.controls.fwdBtn.addEventListener('click', () => this.skip(1));
+    this.row.controls.startBtn.addEventListener('click', () => this.seekToStart());
+    this.row.controls.endBtn.addEventListener('click', () => this.seekToEnd());
     this.playBtn.addEventListener('click', () => this.togglePlay());
     this.toggleBtn.addEventListener('click', () => this.toggleWave());
 
@@ -105,7 +60,7 @@ export class WaveformPanel {
     this.lastBpm = -1; this.lastBar = -1; this.lastSectionIdx = -1;
     this.showWave = true;
     this.wrap.classList.remove('hidden');
-    this.toggleBtn.innerHTML = ICON.eye;
+    setButtonIcon(this.toggleBtn, 'eye');
     this.el.classList.remove('hidden');
   }
 
@@ -125,7 +80,7 @@ export class WaveformPanel {
     if (this.el.classList.contains('hidden') || !this.transport || !this.track) return;
     const pos = this.transport.position();
     this.timeEl.textContent = `${formatTime(pos)} / ${formatTime(this.track.duration)}`;
-    this.playBtn.innerHTML = this.transport.isPlaying ? ICON.pause : ICON.play;
+    setButtonIcon(this.playBtn, this.transport.isPlaying ? 'pause' : 'play');
     this.updateInfo(features, pos);
     if (this.showWave) this.draw();
   }
@@ -164,14 +119,14 @@ export class WaveformPanel {
     if (!this.transport) return;
     if (this.transport.isPlaying) this.transport.pause();
     else this.transport.play();
-    this.playBtn.innerHTML = this.transport.isPlaying ? ICON.pause : ICON.play;
+    setButtonIcon(this.playBtn, this.transport.isPlaying ? 'pause' : 'play');
   }
 
   private toggleWave(): void {
     this.showWave = !this.showWave;
     this.wrap.classList.toggle('hidden', !this.showWave);
     this.legendEl.classList.toggle('hidden', !this.showWave);
-    this.toggleBtn.innerHTML = this.showWave ? ICON.eye : ICON.eyeoff;
+    setButtonIcon(this.toggleBtn, this.showWave ? 'eye' : 'eyeoff');
   }
 
   private step(): number {
