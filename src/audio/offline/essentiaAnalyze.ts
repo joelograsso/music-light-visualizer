@@ -1,6 +1,7 @@
 import { FFT_SIZE, OFFLINE, ESSENTIA } from '../../config';
 import { getEssentia } from './essentia';
 import { assembleTrack } from './assembleTrack';
+import { beatSyncFeatures } from './segmentation';
 import type { AnalyzedTrack } from './types';
 
 /** Map a MelBands energy to 0..1 via a dB window (range tuned in the spike note). */
@@ -52,6 +53,7 @@ export async function analyzeTrackEssentia(
   const rawFlux = new Float32Array(nFrames);
   const mb = ESSENTIA.melBuckets;
   let prev: number[] | null = null;
+  const mfccByFrame: number[][] = [];
 
   for (let f = 0; f < nFrames; f++) {
     const frameVec = essentia.arrayToVector(channel.slice(f * hop, f * hop + fftSize));
@@ -72,7 +74,12 @@ export async function analyzeTrackEssentia(
     if (prev) { let fl = 0; for (let k = 0; k < 4; k++) { const d = lv[k] - prev[k]; if (d > 0) fl += d; } rawFlux[f] = fl; }
     prev = lv;
 
-    frameVec.delete(); win.frame.delete(); spec.spectrum.delete(); melOut.bands.delete();
+    const mfccOut = essentia.MFCC(spec.spectrum); // spec.spectrum still live — MelBands only read it
+    const coeffs = essentia.vectorToArray(mfccOut.mfcc) as Float32Array;
+    mfccByFrame.push(Array.from(coeffs.slice(1))); // skip coeff 0 (energy); keep timbre
+
+    frameVec.delete(); win.frame.delete(); spec.spectrum.delete();
+    melOut.bands.delete(); mfccOut.mfcc.delete(); mfccOut.bands.delete();
     if ((f & 511) === 0) onProgress?.(0.55 + 0.4 * (f / Math.max(1, nFrames)));
   }
 
@@ -82,9 +89,11 @@ export async function analyzeTrackEssentia(
   for (let f = 0; f < nFrames; f++) onset[f] = rawFlux[f] / maxFlux;
   onProgress?.(1);
 
+  const beatFeatures = beatSyncFeatures(mfccByFrame, frameRate, beats);
+
   return assembleTrack({
     duration: channel.length / sampleRate,
     sampleRate, frameRate, tempoBpm,
-    loudness, bass, lowMid, mid, high, onset, beats,
+    loudness, bass, lowMid, mid, high, onset, beats, beatFeatures,
   });
 }

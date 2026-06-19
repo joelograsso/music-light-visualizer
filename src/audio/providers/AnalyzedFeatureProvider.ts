@@ -48,8 +48,16 @@ function dropAt(drops: Drop[], t: number): number {
  */
 export class AnalyzedFeatureProvider implements FeatureProvider {
   private gain = ENERGY.defaultSensitivity;
+  private lastSectionIdx = -1;
 
   constructor(private track: AnalyzedTrack, private positionSec: () => number) {}
+
+  /** Index of the section containing time t, or -1. */
+  private sectionIndexAt(t: number): number {
+    const s = this.track.sections;
+    for (let i = 0; i < s.length; i++) if (t >= s[i].start && t < s[i].end) return i;
+    return s.length > 0 && t >= s[s.length - 1].end ? s.length - 1 : -1;
+  }
 
   setSensitivity(value: number): void {
     this.gain = value;
@@ -89,6 +97,19 @@ export class AnalyzedFeatureProvider implements FeatureProvider {
     const beatConfidence = this.track.beats.length > 1 ? 1 : 0;
     const drop = dropAt(this.track.drops, t);
 
-    return { loudness, energy, bands, beat, motionSpeed, tempoBpm, presence, drop, beatPhase, beatConfidence, anticipation };
+    let sectionActive = false, sectionBoundary = 0, sectionIntensity = 1;
+    if (this.track.sections.length > 0) {
+      sectionActive = true;
+      const idx = this.sectionIndexAt(t);
+      if (idx >= 0) {
+        sectionIntensity = this.track.sections[idx].intensity;
+        // Pulse on any section change — forward crossing, loop wrap, or a backward seek all advance the scene.
+        if (this.lastSectionIdx !== -1 && idx !== this.lastSectionIdx) sectionBoundary = 1;
+        this.lastSectionIdx = idx;
+      }
+    }
+
+    return { loudness, energy, bands, beat, motionSpeed, tempoBpm, presence, drop, beatPhase, beatConfidence, anticipation,
+      sectionActive, sectionBoundary, sectionIntensity };
   }
 }

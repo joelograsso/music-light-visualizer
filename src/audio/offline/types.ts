@@ -1,3 +1,13 @@
+export type SectionTier = 'calm' | 'building' | 'intense' | 'peak';
+
+/** A detected structural segment (times in seconds). */
+export interface Section {
+  start: number;
+  end: number;
+  intensity: number;   // 0..1, relative loudness across the track
+  tier: SectionTier;
+}
+
 /** A detected drop and the build that precedes it (times in seconds). */
 export interface Drop {
   time: number;        // when the slam lands (downbeat-snapped)
@@ -27,4 +37,5 @@ export interface AnalyzedTrack {
   beats: Float32Array;       // beat times (s)
   downbeats: Float32Array;   // downbeat times (s)
   drops: Drop[];
+  sections: Section[];
 }

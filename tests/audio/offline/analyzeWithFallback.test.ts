@@ -7,7 +7,7 @@ const fakeTrack = (tag: number): AnalyzedTrack => ({
   loudness: new Float32Array(1), presence: new Float32Array(1),
   bass: new Float32Array(1), lowMid: new Float32Array(1), mid: new Float32Array(1), high: new Float32Array(1),
   onset: new Float32Array(1), anticipation: new Float32Array(1),
-  beats: new Float32Array(0), downbeats: new Float32Array(0), drops: [],
+  beats: new Float32Array(0), downbeats: new Float32Array(0), drops: [], sections: [],
 });
 
 describe('analyzeWithFallback', () => {

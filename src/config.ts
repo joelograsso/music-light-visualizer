@@ -162,6 +162,18 @@ export const SCENES = [
 ];
 export const SCENE_SWITCH = { minSeconds: 8, maxSeconds: 30 };
 
+/**
+ * Structural segmentation (Stage B, local files only). Beat-synchronous MFCC self-similarity
+ * → checkerboard novelty → boundary peaks; per-section intensity tier from relative loudness.
+ * See docs/superpowers/specs/2026-06-18-structural-segmentation-design.md
+ */
+export const SEGMENT = {
+  kernelBeats: 16,       // checkerboard novelty kernel half-size is kernelBeats/2 (beats)
+  minSectionBars: 4,     // minimum section length (bars) when picking boundary peaks
+  peakThreshold: 1.5,    // a novelty peak must exceed the mean novelty * this
+  intensityFloor: 0.6,   // section intensity never drops below this multiplier (1.0 = effect disabled)
+};
+
 /** Spotify — fill in your registered app's values. */
 export const SPOTIFY = {
   clientId: import.meta.env.VITE_SPOTIFY_CLIENT_ID ?? '',

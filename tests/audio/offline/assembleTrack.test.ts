@@ -38,4 +38,20 @@ describe('assembleTrack', () => {
     for (const v of t.bass) expect(Number.isFinite(v)).toBe(true);
     expect(t.downbeats.length).toBe(0);
   });
+
+  it('produces sections when beatFeatures are supplied, none otherwise', () => {
+    const frameRate = 100, n = 2200;
+    const beats = new Float32Array(41); for (let i = 0; i < 41; i++) beats[i] = i * 0.5;
+    const feats: number[][] = []; for (let i = 0; i < 40; i++) feats.push(i < 20 ? [1, 0] : [0, 1]);
+    const base = {
+      duration: 20, sampleRate: 44100, frameRate, tempoBpm: 120,
+      loudness: ramp(n, (i) => (i / frameRate < 10 ? 0.1 : 0.6)),
+      bass: ramp(n, () => 0.2), lowMid: ramp(n, () => 0), mid: ramp(n, () => 0), high: ramp(n, () => 0),
+      onset: ramp(n, () => 0), beats,
+    };
+    const withFeats = assembleTrack({ ...base, beatFeatures: feats });
+    expect(withFeats.sections.length).toBeGreaterThanOrEqual(2);
+    const without = assembleTrack(base);
+    expect(without.sections.length).toBe(0);
+  });
 });
