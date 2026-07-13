@@ -30,7 +30,7 @@ contradictions between sections, undefined behavior at boundaries, absent
 migration/rollback story for schema changes.
 
 **Scope fit.** Check the feature against the project's overall architecture
-and direction. When the JOE-OS vault is available (`vaults/<project>/`),
+and direction. When the JOE-OS vault is available (`vaults/projects/<project>/`),
 read the project's `-architecture.md`, `-overview.md`, and `-decisions.md`
 pages; otherwise derive the architecture from the code. Flag anything the
 spec contradicts.
