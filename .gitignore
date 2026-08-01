@@ -10,3 +10,4 @@ dist/
 .playwright-mcp/
 *.png
 graphify-out/cache/
+graphify-out/
